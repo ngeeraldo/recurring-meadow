@@ -32,9 +32,9 @@ The Active → Active bucket is split three ways to capture tier movement (upgra
 
 **Tier movement rules**
 
-- Tier ladder: `Free → Standard → Pro Plus → Engage → Enterprise`.
+- Tier ladder: `Standard → Pro Plus → Engage → Enterprise`.
 - Upgrades and downgrades move exactly **one tier** at a time.
-- A customer already at the top (Enterprise) who rolls "upgrade" stays put; a customer at the bottom (Free) who rolls "downgrade" stays put.
+- A customer already at the top (Enterprise) who rolls "upgrade" stays put; a customer at the bottom (Standard) who rolls "downgrade" stays put.
 - Billing cadence (monthly vs. annual) is preserved on tier transitions.
 
 #### From Past Due
@@ -56,17 +56,17 @@ Canceled customers can only **reactivate to Active** — they cannot transition 
 
 #### New customer acquisition
 
-Flat **7 new customers per month** on average, regardless of current base size.
+Flat **3.5 new customers per month** on average, regardless of current base size.
 
-- Per day: **3 independent Bernoulli rolls at ~7.8% each** (`(7 / 30) / 3 ≈ 0.0778`).
-- This allows **0–3 new customers per day**, with an expected value of `3 × 0.0778 = 0.233` ≈ 7/month.
-- More variance than a single 23% roll, but still trivial to implement.
+- Per day: **3 independent Bernoulli rolls at ~3.9% each** (`(3.5 / 30) / 3 ≈ 0.0389`).
+- This allows **0–3 new customers per day**, with an expected value of `3 × 0.0389 = 0.117` ≈ 3.5/month.
 
 ### Sanity check vs. 30% YoY growth
 
 - **Gross monthly churn** ≈ 3% (voluntary, Active → Canceled) + 3% × 35% (involuntary, Active → Past Due → Canceled) ≈ **~4%** of the active base.
-- **Acquisition** is flat at 7/month rather than proportional, so growth is roughly linear: starting from ~40 active, we gain ~7/month and lose ~2/month → net ~+5/month, ending around 65–70 active after 6 months.
-- This is **somewhat above** a strict 30% YoY pace but lands in the right ballpark for a growth-stage company; the trade-off is a much simpler, easier-to-reason-about acquisition model.
+- With 50 starting active customers, monthly churn ≈ 2 customers; acquisition of 3.5/month gives net ~+1.5/month.
+- Modeled as `dA/dt = New − k·A` with `New = 3.5`, `k = 0.04`, `A(0) = 50`: long-run steady state `A_ss = 87.5`, so `A(12) ≈ 87.5 + (50 − 87.5) · e⁻⁰·⁴⁸ ≈ 65` → **~30% YoY**. ✓
+- Over the 6-month simulation window: `A(6) ≈ 87.5 + (50 − 87.5) · e⁻⁰·²⁴ ≈ 58`, i.e. ending around 58 active customers.
 
 ### Initial state distribution (open question)
 

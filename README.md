@@ -11,22 +11,50 @@ pip install -r requirements.txt
 cp .env.example .env  # then fill in STRIPE_API_KEY=sk_test_...
 ```
 
-## Smoke test
+## Seeder
 
-The smoke test creates a single customer "6 months ago" via a Stripe Test Clock, charges an initial invoice with a working card, swaps in a card that fails on collection, and advances the clock 31 days so the first renewal fails. It then polls until the subscription transitions to `past_due`. Use it to validate that the SDK plumbing works end-to-end before scaling up to the full seeder.
+Run the seeder to generate the full dataset that Steps 2 and 3 (BigQuery ETL + MRR SQL) will consume.
 
 ```bash
-python -m scripts.smoke_test
+python -m scripts.seeder
 ```
 
-After it completes, the Stripe Dashboard (test mode) should show:
-- 1 customer
-- 1 subscription with status `past_due`
-- 1 paid invoice (initial) and 1 open/failed renewal invoice
+This runs the simulator (pure-Python, deterministic via `RNG_SEED` in `scripts/config.py`) to produce a chronological event log, then replays the events against Stripe — creating customers with test clocks at the appropriate simulated dates, attaching working/failing payment methods, transitioning subscriptions through `active` / `past_due` / `canceled` / tier changes.
 
-> Note: if you advance much further past the failure, Stripe's Smart Retries will exhaust and your account's "if all retries fail" setting (typically *Cancel subscription*) will run — the sub will end up `canceled` instead of `past_due`. The smoke test stops at +31 days for this reason.
+Defaults (set in [scripts/config.py](scripts/config.py)):
 
-To wipe the test data after a run, use **Stripe Dashboard → Developers → Delete all test data**.
+- 10 starting customers
+- ~1 new customer/month average (~6 net-new across 6 months)
+- 180 simulated days
+- 4 tiers (Standard / Pro Plus / Engage / Enterprise), 2 cadences (monthly / annual)
+
+Scaling up to the full 50-customer run from [refs/seeder.md](refs/seeder.md) is just a config change.
+
+Cleanup is the same: **Stripe Dashboard → Developers → Delete all test data**.
+
+## ETL → BigQuery
+
+Once Stripe has data, the ETL extracts customers, subscriptions, and invoice line items and loads them into the configured BigQuery dataset (drop-and-recreate per run).
+
+Add to your `.env`:
+
+```
+BIGQUERY_PROJECT=your-gcp-project-id
+BIGQUERY_DB=stripe_raw
+```
+
+Then:
+
+```bash
+gcloud auth application-default login   # one-time, no key file in repo
+python -m scripts.etl
+```
+
+Three tables get written:
+
+- `customers` — `id`, `email`, `created`
+- `subscriptions` — `id`, `customer_id`, `status`, period boundaries, `canceled_at`, `items` (JSON)
+- `invoice_line_items` — denormalized one-row-per-line-item with `customer_id`, `subscription_id`, `period_start/end`, `amount`, `currency`, `interval`, `proration`, `quantity`, `unit_amount`. This is the table Step 3's MRR SQL queries.
 
 ## Tests
 
