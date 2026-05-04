@@ -146,47 +146,102 @@ def extract_subscriptions() -> list:
     return rows
 
 
+def _build_price_interval_map() -> dict:
+    """Map ``price_id → recurring.interval`` (e.g. ``"month"``, ``"year"``).
+
+    Stripe's newer API doesn't include the full Price object in invoice line
+    items by default — line.pricing.price_details.price is just the price id.
+    We list all prices once and look up the interval per line item.
+    """
+    out = {}
+    for price in stripe.Price.list(limit=100).auto_paging_iter():
+        recurring = getattr(price, "recurring", None)
+        out[price.id] = getattr(recurring, "interval", None) if recurring else None
+    return out
+
+
+def _line_subscription_id(line) -> Optional[str]:
+    """Subscription id for a subscription-item line (newer API path)."""
+    parent = getattr(line, "parent", None)
+    sub_details = getattr(parent, "subscription_item_details", None) if parent else None
+    return getattr(sub_details, "subscription", None) if sub_details else None
+
+
+def _invoice_subscription_id(inv) -> Optional[str]:
+    """Fallback: invoice-level subscription id.
+
+    The old ``inv.subscription`` field was moved to
+    ``inv.parent.subscription_details.subscription`` in the newer API.
+    """
+    parent = getattr(inv, "parent", None)
+    sub_details = getattr(parent, "subscription_details", None) if parent else None
+    return getattr(sub_details, "subscription", None) if sub_details else None
+
+
+def _line_proration(line) -> Optional[bool]:
+    parent = getattr(line, "parent", None)
+    sub_details = getattr(parent, "subscription_item_details", None) if parent else None
+    return getattr(sub_details, "proration", None) if sub_details else None
+
+
+def _line_pricing(line) -> tuple:
+    """Return ``(price_id, unit_amount)`` from ``line.pricing``.
+
+    ``unit_amount_decimal`` comes back as a string (e.g. ``"1500"``); cast to int.
+    """
+    pricing = getattr(line, "pricing", None)
+    if pricing is None:
+        return None, None
+    price_details = getattr(pricing, "price_details", None)
+    price_id = getattr(price_details, "price", None) if price_details else None
+    unit_decimal = getattr(pricing, "unit_amount_decimal", None)
+    unit_amount = int(float(unit_decimal)) if unit_decimal is not None else None
+    return price_id, unit_amount
+
+
+def _invoice_line_item_to_row(line, inv, price_intervals: dict) -> dict:
+    """Flatten one invoice line into a BigQuery row dict (newer API paths)."""
+    period = getattr(line, "period", None)
+    period_start = getattr(period, "start", None) if period else None
+    period_end = getattr(period, "end", None) if period else None
+
+    price_id, unit_amount = _line_pricing(line)
+    interval = price_intervals.get(price_id) if price_id else None
+
+    # Prefer the line-level subscription id; fall back to the invoice-level one.
+    subscription_id = _line_subscription_id(line) or _invoice_subscription_id(inv)
+
+    return {
+        "line_item_id": line.id,
+        "invoice_id": inv.id,
+        "invoice_status": inv.status,
+        "customer_id": inv.customer,
+        "subscription_id": subscription_id,
+        "period_start": _ts(period_start),
+        "period_end": _ts(period_end),
+        "amount": line.amount,
+        "currency": line.currency,
+        "interval": interval,
+        "proration": _line_proration(line),
+        "quantity": getattr(line, "quantity", None),
+        "unit_amount": unit_amount,
+    }
+
+
 def extract_invoice_line_items() -> list:
     # Same test-clock gotcha — iterate per customer.
     print("Extracting invoices and flattening line items from Stripe...")
+    print("  Building price → interval map...")
+    price_intervals = _build_price_interval_map()
+    print(f"    {len(price_intervals)} prices indexed")
+
     rows = []
     inv_count = 0
     for cus in _all_customers():
-        for inv in stripe.Invoice.list(
-            customer=cus.id,
-            expand=["data.lines.data.price"],
-        ).auto_paging_iter():
+        for inv in stripe.Invoice.list(customer=cus.id).auto_paging_iter():
             inv_count += 1
             for line in inv.lines.data:
-                # StripeObjects are not dicts in v15.x — use getattr(...).
-                price = getattr(line, "price", None)
-                interval = None
-                unit_amount = None
-                if price is not None:
-                    recurring = getattr(price, "recurring", None)
-                    if recurring is not None:
-                        interval = getattr(recurring, "interval", None)
-                    unit_amount = getattr(price, "unit_amount", None)
-
-                period = getattr(line, "period", None)
-                period_start = getattr(period, "start", None) if period else None
-                period_end = getattr(period, "end", None) if period else None
-
-                rows.append({
-                    "line_item_id": line.id,
-                    "invoice_id": inv.id,
-                    "invoice_status": inv.status,
-                    "customer_id": inv.customer,
-                    "subscription_id": getattr(inv, "subscription", None),
-                    "period_start": _ts(period_start),
-                    "period_end": _ts(period_end),
-                    "amount": line.amount,
-                    "currency": line.currency,
-                    "interval": interval,
-                    "proration": getattr(line, "proration", None),
-                    "quantity": getattr(line, "quantity", None),
-                    "unit_amount": unit_amount,
-                })
+                rows.append(_invoice_line_item_to_row(line, inv, price_intervals))
     print(f"  Read {inv_count} invoices, loaded {len(rows)} invoice line items")
     return rows
 
