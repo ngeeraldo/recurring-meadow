@@ -49,8 +49,11 @@ FROM_ACTIVE = {
     "downgrade": 0.01 / 30,  # 0.033%
 }
 
+# Stripe Smart Retry window — past_due auto-cancels at the end of it.
+PAST_DUE_WINDOW_DAYS = 21
+
 FROM_PAST_DUE = {
-    "active":   0.50 / 21,   # 2.381% — cumulative ~40% recovery within the 21d window
+    "active":   0.50 / PAST_DUE_WINDOW_DAYS,   # 2.381% — cumulative ~40% recovery within the window
 }
 
 FROM_CANCELED = {

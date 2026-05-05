@@ -55,6 +55,9 @@ WINDOW_END = date(2026, 4, 1)
 VALIDATION_TOLERANCE = Decimal("0.01")    # Stage 2: cent-level agreement
 SANITY_TOLERANCE_PCT = Decimal("20")      # Stage 1: ±20%
 
+# Stripe Smart Retry window — past_due auto-cancels at the end of it.
+PAST_DUE_WINDOW_DAYS = 21
+
 PLACEHOLDERS = {"", "your-gcp-project-id", "your-default-project-id"}
 
 
@@ -103,14 +106,18 @@ def _expected_per_subscriber_mrr_cents() -> float:
 
 
 def _effective_monthly_churn() -> float:
-    """Direct cancel + (past_due → eventually canceled), as a monthly rate."""
+    """Direct cancel + (past_due → eventually canceled), as a monthly rate.
+
+    Past_due has only a recovery rate in config; Stripe Smart Retries
+    auto-cancel at the end of the ~21-day window, so the cancel branch is
+    the complement of cumulative recovery over that window.
+    """
     direct = config.FROM_ACTIVE["canceled"] * 30
     to_past_due = config.FROM_ACTIVE["past_due"] * 30
 
-    pd_to_active = config.FROM_PAST_DUE["active"] * 30
-    pd_to_canceled = config.FROM_PAST_DUE["canceled"] * 30
-    pd_exit = pd_to_active + pd_to_canceled
-    p_pd_canceled = pd_to_canceled / pd_exit if pd_exit else 0.0
+    pd_recover_daily = config.FROM_PAST_DUE["active"]
+    p_pd_recovered = 1.0 - (1.0 - pd_recover_daily) ** PAST_DUE_WINDOW_DAYS
+    p_pd_canceled = 1.0 - p_pd_recovered
 
     return direct + to_past_due * p_pd_canceled
 

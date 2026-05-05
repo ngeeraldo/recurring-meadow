@@ -14,6 +14,7 @@ class SimCustomer:
     cadence: str        # "month" or "year"
     state: str          # "active" / "past_due" / "canceled"
     created_day: int    # 0 for the initial roster
+    past_due_day: Optional[int] = None  # day the current past_due streak began
 
 
 @dataclass
@@ -55,6 +56,7 @@ def _roll_active(cust: SimCustomer, rng: random.Random, day: int, events: list) 
     cum += p["past_due"]
     if roll < cum:
         cust.state = "past_due"
+        cust.past_due_day = day
         events.append(Event(day=day, sim_id=cust.sim_id, type="marked_past_due"))
         return
 
@@ -92,11 +94,13 @@ def _roll_active(cust: SimCustomer, rng: random.Random, day: int, events: list) 
 
 
 def _roll_past_due(cust: SimCustomer, rng: random.Random, day: int, events: list) -> None:
-    # Only the recovery exit is simulator-driven. Stripe's Smart Retries will
-    # auto-cancel the sub when the retry schedule exhausts, so we don't need
-    # to synthesize canceled events from past_due here.
-    if rng.random() < config.FROM_PAST_DUE["active"]:
+    # Recovery only inside the Smart Retry window. After it expires we leave
+    # the customer past_due; the end-of-run catch-up loop advances the clock
+    # far enough for Stripe's retries to exhaust and auto-cancel the sub.
+    if (rng.random() < config.FROM_PAST_DUE["active"]
+            and day - cust.past_due_day < config.PAST_DUE_WINDOW_DAYS):
         cust.state = "active"
+        cust.past_due_day = None
         events.append(Event(day=day, sim_id=cust.sim_id, type="recovered"))
 
 

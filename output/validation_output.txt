@@ -1,0 +1,41 @@
+MRR Validation — multi-stage cross-check of sql/mrr_monthly.sql
+Generated: 2026-05-05T20:25:13.761199+00:00
+
+Querying BigQuery sql/mrr_monthly.sql...
+  got 6 historical months + 1 current (2026-05-01) from BigQuery
+
+======================================================================
+Stage 1 — Sanity check (analytical projection vs BigQuery, ±20%)
+======================================================================
+
+  Month            Expected     BigQuery       Δ%    Status
+  2025-11-01     $   750.73   $   836.50   +11.4%      PASS
+  2025-12-01     $   765.71   $   871.50   +13.8%      PASS
+  2026-01-01     $   780.00   $   891.50   +14.3%      PASS
+  2026-02-01     $   793.61   $   951.00   +19.8%      PASS
+  2026-03-01     $   806.58   $ 1,035.50   +28.4%      FAIL
+  2026-04-01     $   818.95   $ 1,070.50   +30.7%      FAIL
+
+Stage 1 failed for 2 month(s): ['2026-03-01', '2026-04-01']
+
+Walking customer invoices in Python (for stage 2)...
+  walked 72 customers
+
+======================================================================
+Stage 2 — MRR Validation Report (Python walk vs BigQuery, ±$0.01)
+======================================================================
+
+  Month              BigQuery SQL    Python Valid.        Delta    Status
+  2025-11-01           $   836.50       $   836.50   $     0.00    PASS
+  2025-12-01           $   871.50       $   871.50   $     0.00    PASS
+  2026-01-01           $   891.50       $   891.50   $     0.00    PASS
+  2026-02-01           $   951.00       $   951.00   $     0.00    PASS
+  2026-03-01           $ 1,035.50       $ 1,035.50   $     0.00    PASS
+  2026-04-01           $ 1,070.50       $ 1,070.50   $     0.00    PASS
+  2026-05-01 (now)     $ 1,055.50       $ 1,055.50   $     0.00    PASS
+
+Stage 2 passed. (7 rows within $0.01)
+
+======================================================================
+Failures: sanity check
+Report saved to /Users/nicogiraldo/Documents/code/recurring-meadow/output/validation_output.txt

@@ -46,7 +46,11 @@ Collects every customers paid invoices directly from Stripe using Python with th
 The methodology itself, both implementations use the same period-spreading logic. They could both be correct or wrong. Closing this gap would require verifying specific customers across plan tiers. A quick look over was completed, but a rigourous programmatic solution was not implemented withing the 2-day window.
 
 ## Known limitations
-**Quantity=1 per customer.** All seed customers have a single screen, producing 5-10x smaller MRR magnitudes. The methodology correctly multiplies `unit_amount × quantity`; the seed just doesn't support it. However, the seed does support subscription changes (tier upgrades / downgrades), so we have confidence that the MRR correctly handles subscription modifications.
+**Quantity=1 per customer.** 
+All seed customers have a single screen, producing 5-10x smaller MRR magnitudes. The methodology correctly multiplies `unit_amount × quantity`; the seed just doesn't support it. However, the seed does support subscription changes (tier upgrades / downgrades), so we have confidence that the MRR correctly handles subscription modifications.
+
+**Tier Changes Producds No Proration Charges**
+Mid-period tier changes use Stripe's proration_behavior='none' — the new price takes effect at the next renewal rather than generating a proration invoice. This is a real Stripe configuration option used by many B2B SaaS companies; it produces cleaner seed data and simpler MRR math while remaining realistic.
 
 ## Architecture for production sync
 Webhook-driven incremental sync (subscribe to invoice.paid, 
