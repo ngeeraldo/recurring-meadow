@@ -1,62 +1,133 @@
 # Recurring Meadow
 
-End-to-end MRR reporting pipeline backed by Stripe test data.
+End-to-end MRR reporting pipeline backed by Stripe test data: a Python seeder that fills a Stripe sandbox with realistic subscription history, a BigQuery ETL, a SQL MRR query, a FastAPI wrapper, and a React dashboard.
 
-## Setup
+```
+Stripe (test mode)  ──seeder──►  customers + subs + invoices
+        │
+     scripts/etl ──►  BigQuery: stripe_raw.invoice_line_items
+                                          │
+                                  sql/mrr_monthly.sql
+                                          │
+                                    api/main.py  ──►  frontend/ (Vite + Recharts)
+```
+
+---
+
+## 1. One-time setup
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
+
+# Backend (seeder, ETL, validation)
 pip install -r requirements.txt
-cp .env.example .env  # then fill in STRIPE_API_KEY=sk_test_...
+
+# API server
+pip install -r api/requirements.txt
+
+# Frontend
+cd frontend && npm install && cd ..
 ```
 
-## Seeder
+Copy `.env.example` to `.env` and fill in:
 
-Run the seeder to generate the full dataset that Steps 2 and 3 (BigQuery ETL + MRR SQL) will consume.
+```
+STRIPE_API_KEY=sk_test_...
+BIGQUERY_PROJECT=your-gcp-project-id
+
+# Default dataset name. Change if you want a different one.
+BIGQUERY_DB=stripe_raw 
+```
+
+BigQuery uses Application Default Credentials — once per machine:
+
+```bash
+gcloud auth application-default login
+```
+
+---
+
+## 2. Generate the data (Stripe)
+
+The seeder simulates 180 days of a growth-stage SaaS using Stripe Test Clocks: customers go through `active` / `past_due` / `canceled` and tier upgrades / downgrades.
+
+> **Heads up: this takes ~1 hour to complete.** Stripe rate-limits API calls and each customer requires a chain of test-clock advances + polling — there's no way to parallelize it meaningfully. Run it once and leave it.
 
 ```bash
 python -m scripts.seeder
 ```
 
-This runs the simulator (pure-Python, deterministic via `RNG_SEED` in [scripts/seeder/config.py](scripts/seeder/config.py)) to produce a chronological event log, then replays the events against Stripe — creating customers with test clocks at the appropriate simulated dates, attaching working/failing payment methods, transitioning subscriptions through `active` / `past_due` / `canceled` / tier changes.
+The simulator is deterministic via `RNG_SEED` in [scripts/seeder/config.py](scripts/seeder/config.py). When the run finishes, a structured summary + per-customer event timeline is written to [output/seeder_events.txt](output/seeder_events.txt).
 
-When the run finishes, a structured summary + per-customer event timeline is written to [output/seeder_events.txt](output/seeder_events.txt). It serves as audit-trail evidence of what data was seeded for a given seed and is committed to the repo.
+Defaults ([scripts/seeder/config.py](scripts/seeder/config.py)):
 
-Defaults (set in [scripts/seeder/config.py](scripts/seeder/config.py)):
-
-- 10 starting customers
-- ~1 new customer/month average (~6 net-new across 6 months)
+- 50 starting customers
+- ~3.5 new customers/month average (~30% YoY growth target)
 - 180 simulated days
 - 4 tiers (Standard / Pro Plus / Engage / Enterprise), 2 cadences (monthly / annual)
 
-Scaling up to the full 50-customer run from [refs/seeder.md](refs/seeder.md) is just a config change.
+To wipe between runs: **Stripe Dashboard → Developers → Delete all test data**.
 
-Cleanup is the same: **Stripe Dashboard → Developers → Delete all test data**.
+---
 
-## ETL → BigQuery
-
-Once Stripe has data, the ETL extracts customers, subscriptions, and invoice line items and loads them into the configured BigQuery dataset (drop-and-recreate per run).
-
-Add to your `.env`:
-
-```
-BIGQUERY_PROJECT=your-gcp-project-id
-BIGQUERY_DB=stripe_raw
-```
-
-Then:
+## 3. Load the data (BigQuery)
 
 ```bash
-gcloud auth application-default login   # one-time, no key file in repo
 python -m scripts.etl
 ```
 
-Three tables get written:
+Extracts paid invoice line items from Stripe and loads them into `<BIGQUERY_PROJECT>.<BIGQUERY_DB>.invoice_line_items` (drop-and-recreate per run). Rows are denormalized — `customer_id`, `subscription_id`, `quantity`, `unit_amount`, `interval` are all on every row so ad-hoc queries don't need joins.
 
-- `customers` — `id`, `email`, `created`
-- `subscriptions` — `id`, `customer_id`, `status`, period boundaries, `canceled_at`, `items` (JSON)
-- `invoice_line_items` — denormalized one-row-per-line-item with `customer_id`, `subscription_id`, `period_start/end`, `amount`, `currency`, `interval`, `proration`, `quantity`, `unit_amount`. This is the table Step 3's MRR SQL queries.
+The MRR query lives in [sql/mrr_monthly.sql](sql/mrr_monthly.sql). It returns one row per month for the simulation window plus a `(now)` row for in-progress MRR.
+
+---
+
+## 4. Start the API
+
+> **Steps 4 and 5 are long-running servers.** Open a new terminal for each — the API in one, the frontend in another — and leave both running. Step 5 won't connect to anything until step 4 is up.
+
+```bash
+.venv/bin/uvicorn api.main:app --reload --port 8000
+```
+
+Endpoints:
+
+- `GET /api/health` — liveness check.
+- `GET /api/mrr` — runs `sql/mrr_monthly.sql` against BigQuery and returns `[{month, mrr_amount, is_current}, ...]`. Re-reads the SQL on every request so you can iterate on the query without restarting the server.
+
+CORS is open only to the Vite dev server at `http://localhost:5173`.
+
+---
+
+## 5. Start the frontend
+
+```bash
+cd frontend && npm run dev
+```
+
+Open <http://localhost:5173>. The dashboard shows the historical MRR line, a dashed projected segment to today's "now" snapshot, and a per-month table.
+
+---
+
+## Validation
+
+Cross-checks the BigQuery SQL against an independent per-customer Python walk:
+
+```bash
+python -m scripts.validate_mrr
+```
+
+Two stages:
+
+- **Stage 1 — Sanity check** (±20%): compares the BigQuery total against an analytical MRR projection derived from `catalog.PLANS` + the seeder config. Catches order-of-magnitude regressions.
+- **Stage 2 — MRR validation report** (±$0.01): walks every customer's paid invoices in Python with the same period-spreading logic as the SQL and compares per-month totals. Same source data, different code path — agreement validates the SQL's internal consistency.
+
+Output goes to stdout and [output/validation_output.txt](output/validation_output.txt). On any divergence in Stage 2, a per-customer breakdown for the failing month is appended.
+
+For methodology background, see [METHODOLOGY.md](METHODOLOGY.md).
+
+---
 
 ## Tests
 
@@ -64,12 +135,32 @@ Three tables get written:
 pytest
 ```
 
-Validation: 
-pytest -s tests/test_expected_metrics.py
+Unit-tests cover the seeder helpers (catalog, clocks, customers, simulator, subscriptions, stripe_client, config). Integration scripts (`scripts.etl`, `scripts.validate_mrr`, `scripts.seeder`) are exercised by running them.
 
-Start API
-.venv/bin/pip install -r api/requirements.txt   # one-time     
-.venv/bin/uvicorn api.main:app --reload --port 8000
+---
 
-Start Frontend
-cd frontend && npm run dev
+## Repo layout
+
+```
+scripts/
+  etl.py                   # Stripe → BigQuery
+  validate_mrr.py          # SQL ↔ Python cross-check
+  seeder/                  # python -m scripts.seeder
+    __main__.py            # orchestrator
+    simulator.py           # pure-Python event generator
+    event_handler.py       # event → Stripe API call
+    config.py              # tunable knobs (seed, scale, probabilities)
+    catalog.py             # idempotent product/price catalog
+    clocks.py              # test-clock helpers
+    customers.py           # customer + payment-method helpers
+    subscriptions.py       # subscription helpers
+    stripe_client.py       # SDK init from .env
+sql/
+  mrr_monthly.sql          # MRR per month, with is_current flag
+api/
+  main.py                  # FastAPI wrapping mrr_monthly.sql
+frontend/                  # Vite + React + Recharts dashboard
+tests/                     # pytest unit tests for seeder helpers
+output/                    # generated artifacts (seeder log, validation report)
+refs/                      # reference docs for claude code (pricing, seeder spec)
+```
