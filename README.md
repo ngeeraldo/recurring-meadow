@@ -50,24 +50,17 @@ gcloud auth application-default login
 
 ## 2. Generate the data (Stripe)
 
-The seeder simulates 180 days of a growth-stage SaaS using Stripe Test Clocks: customers go through `active` / `past_due` / `canceled` and tier upgrades / downgrades.
-
-> **Heads up: this takes ~1 hour to complete.** Stripe rate-limits API calls and each customer requires a chain of test-clock advances + polling — there's no way to parallelize it meaningfully. Run it once and leave it.
+**Heads up: this takes ~1 hour to complete.** 
+Stripe rate-limits API calls and each customer requires a chain of test-clock advances + polling — there's no way to parallelize it meaningfully. Run it once and leave it.
 
 ```bash
 python -m scripts.seeder
 ```
+The seeder simulates 180 days of a growth-stage SaaS using Stripe Test Clocks: customers go through `active` / `past_due` / `canceled` and tier upgrades / downgrades.
 
-The simulator is deterministic via `RNG_SEED` in [scripts/seeder/config.py](scripts/seeder/config.py). When the run finishes, a structured summary + per-customer event timeline is written to [output/seeder_events.txt](output/seeder_events.txt).
+When the run finishes, a structured summary + per-customer event timeline is written to [output/seeder_events.txt](output/seeder_events.txt).
 
-Defaults ([scripts/seeder/config.py](scripts/seeder/config.py)):
-
-- 50 starting customers
-- ~3.5 new customers/month average (~30% YoY growth target)
-- 180 simulated days
-- 4 tiers (Standard / Pro Plus / Engage / Enterprise), 2 cadences (monthly / annual)
-
-To wipe between runs: **Stripe Dashboard → Developers → Delete all test data**.
+Seed Defaults ([scripts/seeder/config.py](scripts/seeder/config.py)):
 
 ---
 
@@ -76,8 +69,6 @@ To wipe between runs: **Stripe Dashboard → Developers → Delete all test data
 ```bash
 python -m scripts.etl
 ```
-
-Extracts paid invoice line items from Stripe and loads them into `<BIGQUERY_PROJECT>.<BIGQUERY_DB>.invoice_line_items` (drop-and-recreate per run). Rows are denormalized — `customer_id`, `subscription_id`, `quantity`, `unit_amount`, `interval` are all on every row so ad-hoc queries don't need joins.
 
 The MRR query lives in [sql/mrr_monthly.sql](sql/mrr_monthly.sql). It returns one row per month for the simulation window plus a `(now)` row for in-progress MRR.
 
@@ -91,13 +82,6 @@ The MRR query lives in [sql/mrr_monthly.sql](sql/mrr_monthly.sql). It returns on
 .venv/bin/uvicorn api.main:app --reload --port 8000
 ```
 
-Endpoints:
-
-- `GET /api/health` — liveness check.
-- `GET /api/mrr` — runs `sql/mrr_monthly.sql` against BigQuery and returns `[{month, mrr_amount, is_current}, ...]`. Re-reads the SQL on every request so you can iterate on the query without restarting the server.
-
-CORS is open only to the Vite dev server at `http://localhost:5173`.
-
 ---
 
 ## 5. Start the frontend
@@ -106,7 +90,7 @@ CORS is open only to the Vite dev server at `http://localhost:5173`.
 cd frontend && npm run dev
 ```
 
-Open <http://localhost:5173>. The dashboard shows the historical MRR line, a dashed projected segment to today's "now" snapshot, and a per-month table.
+Open <http://localhost:5173>.
 
 ---
 

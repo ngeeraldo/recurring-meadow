@@ -7,316 +7,317 @@ Initial customers: 50
 
 Final customer count: 72
 Final state distribution:
-  active:   58
-  canceled: 14
+  active:   65
+  canceled:  7
 
 Final active-tier distribution:
-  engage:      8 (13.8%)
-  enterprise:  6 (10.3%)
-  pro_plus:   14 (24.1%)
-  standard:   30 (51.7%)
+  engage:      8 (12.3%)
+  enterprise:  6 (9.2%)
+  pro_plus:   15 (23.1%)
+  standard:   36 (55.4%)
 
 Final active-cadence distribution:
-  monthly: 49 (84.5%)
-  yearly:   9 (15.5%)
+  monthly: 56 (86.2%)
+  yearly:   9 (13.8%)
 
 ══════════════════════════════════════════════════════════════════════
 
-─── sim_0  cus_USgUyOLY5q2KiH  sub_1TTl7cQ6rEPTt2h0DsqtkYB4 ───
+─── sim_0  cus_USiQgaBRuVtoKM  sub_1TTmzOQ6rEPTt2h0wULEteJh ───
 day   0: customer_created (pro_plus, monthly)
 day 120: tier_upgraded (pro_plus → engage)
 
-─── sim_1  cus_USgUbxsTGyT1vs  sub_1TTl7iQ6rEPTt2h0udnTpgRL ───
+─── sim_1  cus_USiQzhx86FzxXT  sub_1TTmzUQ6rEPTt2h0sHUGZycl ───
 day   0: customer_created (standard, monthly)
 (no further events)
 
-─── sim_2  cus_USgUQiyJwRjcNc  sub_1TTl7oQ6rEPTt2h03WmHbBHg ───
+─── sim_2  cus_USiQhbx1CzJk8w  sub_1TTmzaQ6rEPTt2h05umZSydm ───
 day   0: customer_created (pro_plus, monthly)
 day  49: canceled
 
-─── sim_3  cus_USgUmlPzw5M6nL  sub_1TTl7uQ6rEPTt2h0fomp7KDS ───
+─── sim_3  cus_USiQchvoYbmrwD  sub_1TTmzgQ6rEPTt2h0PKXLyLOQ ───
 day   0: customer_created (engage, monthly)
 day   6: canceled
 
-─── sim_4  cus_USgUVT9jLD498r  sub_1TTl81Q6rEPTt2h0n9eX8sJS ───
+─── sim_4  cus_USiQLZQMJQvGqo  sub_1TTmznQ6rEPTt2h0PFJVz49x ───
 day   0: customer_created (standard, monthly)
 day  78: marked_past_due
 day 138: recovered
 
-─── sim_5  cus_USgVNZcU1qwTp3  sub_1TTl86Q6rEPTt2h0159JUdbb ───
+─── sim_5  cus_USiQD8pENjxGyb  sub_1TTmztQ6rEPTt2h0wAisqxb9 ───
 day   0: customer_created (standard, monthly)
 (no further events)
 
-─── sim_6  cus_USgVLBY2wGOPM1  sub_1TTl8CQ6rEPTt2h0YezmhLce ───
+─── sim_6  cus_USiQSm115qbPyt  sub_1TTn01Q6rEPTt2h0EZrIhphd ───
 day   0: customer_created (standard, monthly)
 (no further events)
 
-─── sim_7  cus_USgVoKWxHgxY1Q  sub_1TTl8IQ6rEPTt2h0m4Rkvaju ───
+─── sim_7  cus_USiQVatqOXT8NQ  sub_1TTn07Q6rEPTt2h0jRg5YBwu ───
 day   0: customer_created (pro_plus, monthly)
 day  18: tier_downgraded (pro_plus → standard)
 
-─── sim_8  cus_USgVoeMf8drGz0  sub_1TTl8OQ6rEPTt2h0I0VZSFnE ───
+─── sim_8  cus_USiRsZtEE3uwtQ  sub_1TTn0DQ6rEPTt2h0KxG6FZEI ───
 day   0: customer_created (standard, monthly)
 (no further events)
 
-─── sim_9  cus_USgVW94nXBHODm  sub_1TTl8TQ6rEPTt2h0YXYfc35D ───
+─── sim_9  cus_USiRVPdZpdX8NS  sub_1TTn0IQ6rEPTt2h0vrLjthmW ───
 day   0: customer_created (pro_plus, monthly)
 day 133: canceled
 
-─── sim_10  cus_USgVicglYtVqx6  sub_1TTl8aQ6rEPTt2h0X8RBKB22 ───
+─── sim_10  cus_USiRAeP0ViIkqe  sub_1TTn0OQ6rEPTt2h0xQlZq2vG ───
 day   0: customer_created (pro_plus, monthly)
 (no further events)
 
-─── sim_11  cus_USgVKnQTWS8X4m  sub_1TTl8fQ6rEPTt2h0aMPDFpCU ───
+─── sim_11  cus_USiRY2JwF0b1Y9  sub_1TTn0UQ6rEPTt2h099aUe5T8 ───
 day   0: customer_created (standard, monthly)
 (no further events)
 
-─── sim_12  cus_USgVuuzsVdoyfN  sub_1TTl8mQ6rEPTt2h0aWwpT85K ───
+─── sim_12  cus_USiRy7V7eYVWWy  sub_1TTn0aQ6rEPTt2h0RijwoL5r ───
 day   0: customer_created (enterprise, monthly)
 day  86: canceled
 
-─── sim_13  cus_USgVXydozkK3ZG  sub_1TTl8rQ6rEPTt2h0QkvnoqxJ ───
+─── sim_13  cus_USiRHKDbWOu5Uv  sub_1TTn0gQ6rEPTt2h0k4JLnXne ───
 day   0: customer_created (standard, monthly)
 (no further events)
 
-─── sim_14  cus_USgV4fvGPwG58p  sub_1TTl8xQ6rEPTt2h0tEYv944A ───
+─── sim_14  cus_USiR1OOhmnzjDG  sub_1TTn0mQ6rEPTt2h070h0sazg ───
 day   0: customer_created (pro_plus, monthly)
 (no further events)
 
-─── sim_15  cus_USgWU1IoHQRImz  sub_1TTl94Q6rEPTt2h0MqEDOIR3 ───
+─── sim_15  cus_USiRPIn8OaEOsY  sub_1TTn0sQ6rEPTt2h0CNlKfWY5 ───
 day   0: customer_created (pro_plus, monthly)
 (no further events)
 
-─── sim_16  cus_USgWA29coL5xHh  sub_1TTl9AQ6rEPTt2h0u7uuA8tk ───
+─── sim_16  cus_USiRwJKKg21nV4  sub_1TTn0yQ6rEPTt2h0l4TGXt7a ───
 day   0: customer_created (standard, yearly)
 day 101: tier_upgraded (standard → pro_plus)
 
-─── sim_17  cus_USgWfz3YaWSJse  sub_1TTl9GQ6rEPTt2h0zGrFfzqY ───
+─── sim_17  cus_USiRlwhIrwXS6j  sub_1TTn14Q6rEPTt2h0Aoi6Djxo ───
 day   0: customer_created (standard, monthly)
 (no further events)
 
-─── sim_18  cus_USgWWW0Rvlndgd  sub_1TTl9MQ6rEPTt2h0cFAjsXxR ───
+─── sim_18  cus_USiSI4RxYnGeN5  sub_1TTn19Q6rEPTt2h056Zq8bqI ───
 day   0: customer_created (pro_plus, monthly)
 (no further events)
 
-─── sim_19  cus_USgWRxPjKmHaMu  sub_1TTl9SQ6rEPTt2h01Etqmeti ───
+─── sim_19  cus_USiSxROdZDFMpg  sub_1TTn1FQ6rEPTt2h0UQnJOg37 ───
 day   0: customer_created (engage, monthly)
 (no further events)
 
-─── sim_20  cus_USgWZNjNBvLJvS  sub_1TTl9XQ6rEPTt2h0uMg7UMcv ───
+─── sim_20  cus_USiS1o8zuc9zeC  sub_1TTn1LQ6rEPTt2h0WuaHeTSj ───
 day   0: customer_created (pro_plus, monthly)
 (no further events)
 
-─── sim_21  cus_USgWbqPbbO7R9p  sub_1TTl9dQ6rEPTt2h0mHQteviD ───
+─── sim_21  cus_USiSWmFCMPabiJ  sub_1TTn1QQ6rEPTt2h0Uz4N366N ───
 day   0: customer_created (standard, monthly)
 (no further events)
 
-─── sim_22  cus_USgWuAarTUUswy  sub_1TTl9jQ6rEPTt2h0pYuAihTM ───
+─── sim_22  cus_USiS84jlCgCff3  sub_1TTn1XQ6rEPTt2h0uHiTOu37 ───
 day   0: customer_created (standard, monthly)
 day  45: marked_past_due
-day  82: canceled
+day 100: recovered
 
-─── sim_23  cus_USgWe8cGf1KSmg  sub_1TTl9qQ6rEPTt2h070yorSaY ───
+─── sim_23  cus_USiSjExrNxkh7b  sub_1TTn1dQ6rEPTt2h0ZAau48ab ───
 day   0: customer_created (standard, monthly)
 (no further events)
 
-─── sim_24  cus_USgWQiPQPaJoiL  sub_1TTl9wQ6rEPTt2h0mI1s4vqE ───
+─── sim_24  cus_USiSxh2QEpNpUT  sub_1TTn1jQ6rEPTt2h0BEpGGkvP ───
 day   0: customer_created (pro_plus, monthly)
 day   1: marked_past_due
-day  24: canceled
+day  35: recovered
 
-─── sim_25  cus_USgXwylkrnfha2  sub_1TTlA2Q6rEPTt2h01kHBCgOL ───
+─── sim_25  cus_USiSNFcZaIhxGu  sub_1TTn1pQ6rEPTt2h0t0wJ5FL1 ───
 day   0: customer_created (standard, monthly)
 (no further events)
 
-─── sim_26  cus_USgXjiRmh8rPNG  sub_1TTlA8Q6rEPTt2h0zscZfSf9 ───
+─── sim_26  cus_USiSUMq0CBU2fe  sub_1TTn1wQ6rEPTt2h0sB3L6NZ3 ───
 day   0: customer_created (standard, yearly)
 (no further events)
 
-─── sim_27  cus_USgX55UQCkIHVn  sub_1TTlAFQ6rEPTt2h0K0llO1KP ───
+─── sim_27  cus_USiSEIhNGgWe3c  sub_1TTn22Q6rEPTt2h0LwU2A13q ───
 day   0: customer_created (pro_plus, monthly)
 (no further events)
 
-─── sim_28  cus_USgXbmPADuqwln  sub_1TTlALQ6rEPTt2h0MzMySdcD ───
+─── sim_28  cus_USiThrbanWvC32  sub_1TTn27Q6rEPTt2h0XlJ7REmn ───
 day   0: customer_created (standard, monthly)
 (no further events)
 
-─── sim_29  cus_USgXPBDRlvaR7C  sub_1TTlARQ6rEPTt2h09M1A7guX ───
+─── sim_29  cus_USiT4mtl00kBBu  sub_1TTn2EQ6rEPTt2h0Ym98bHE8 ───
 day   0: customer_created (standard, monthly)
 day   6: marked_past_due
-day 113: canceled
+day 113: recovered
+day 119: canceled
 
-─── sim_30  cus_USgXYbMg5sDfII  sub_1TTlAXQ6rEPTt2h0GtHA4oZU ───
+─── sim_30  cus_USiTPwKBWpL0Un  sub_1TTn2KQ6rEPTt2h0T5JPITUx ───
 day   0: customer_created (enterprise, monthly)
 (no further events)
 
-─── sim_31  cus_USgXX2WBNDHg9x  sub_1TTlAdQ6rEPTt2h05ZsJKnR6 ───
+─── sim_31  cus_USiTBUWL27qL3P  sub_1TTn2QQ6rEPTt2h0uSz0ujEF ───
 day   0: customer_created (standard, monthly)
 (no further events)
 
-─── sim_32  cus_USgXQkc5rwWyFs  sub_1TTlAjQ6rEPTt2h0UWSrN0Ct ───
+─── sim_32  cus_USiTRbVe26wF8e  sub_1TTn2VQ6rEPTt2h0JW7j6kwr ───
 day   0: customer_created (pro_plus, monthly)
 (no further events)
 
-─── sim_33  cus_USgXX8Ujg8JKGG  sub_1TTlApQ6rEPTt2h0QO2BJAo7 ───
+─── sim_33  cus_USiT9v0Y1HCTnF  sub_1TTn2bQ6rEPTt2h09x85bUB9 ───
 day   0: customer_created (standard, monthly)
 day 135: marked_past_due
-day 156: canceled
+day 165: recovered
 
-─── sim_34  cus_USgX5AzIZy7fXt  sub_1TTlAuQ6rEPTt2h0yOClQVf5 ───
+─── sim_34  cus_USiTALpXrWoujh  sub_1TTn2hQ6rEPTt2h0g1CVvvZl ───
 day   0: customer_created (standard, monthly)
 day 119: marked_past_due
 day 147: recovered
 
-─── sim_35  cus_USgYgQyg3MrFgB  sub_1TTlB0Q6rEPTt2h0GUf3UaPP ───
+─── sim_35  cus_USiTj5pqhMprkg  sub_1TTn2nQ6rEPTt2h0KZlcMLpb ───
 day   0: customer_created (standard, yearly)
 (no further events)
 
-─── sim_36  cus_USgYET8zKzUZB0  sub_1TTlB6Q6rEPTt2h0qHkVwgzG ───
+─── sim_36  cus_USiTQJle94CCOW  sub_1TTn2tQ6rEPTt2h0RRIRQQcp ───
 day   0: customer_created (engage, monthly)
-day 171: marked_past_due
+day 171: marked_past_due  (skipped: would advance to day 182 > 180 to fire renewal)
 
-─── sim_37  cus_USgY08SVFVZoIH  sub_1TTlBCQ6rEPTt2h0iNyV6kQ9 ───
+─── sim_37  cus_USiTWwKmqoa5dl  sub_1TTn30Q6rEPTt2h0td2Zek0n ───
 day   0: customer_created (pro_plus, monthly)
 (no further events)
 
-─── sim_38  cus_USgYKNTmK3H6uG  sub_1TTlBIQ6rEPTt2h02yH0Lsbw ───
+─── sim_38  cus_USiUkk9gZ9q4Ol  sub_1TTn35Q6rEPTt2h02DtL8TpS ───
 day   0: customer_created (engage, monthly)
 (no further events)
 
-─── sim_39  cus_USgYIk0SQDrBQd  sub_1TTlBOQ6rEPTt2h0XxLxwRht ───
+─── sim_39  cus_USiUwmKH7oskMc  sub_1TTn3BQ6rEPTt2h0rZKLl8DZ ───
 day   0: customer_created (standard, monthly)
 (no further events)
 
-─── sim_40  cus_USgYtqhHCOhQKs  sub_1TTlBUQ6rEPTt2h0HJYuwo1Z ───
+─── sim_40  cus_USiUzHaN2Qmr1f  sub_1TTn3HQ6rEPTt2h0MICNMPkC ───
 day   0: customer_created (standard, monthly)
 day  71: marked_past_due
-day 115: canceled
+day 160: recovered
 
-─── sim_41  cus_USgYozIJgn6g65  sub_1TTlBaQ6rEPTt2h0DoFdhgT7 ───
+─── sim_41  cus_USiUsSxecwdroF  sub_1TTn3NQ6rEPTt2h0x1Hn34kz ───
 day   0: customer_created (standard, yearly)
 (no further events)
 
-─── sim_42  cus_USgYmoRRTMFklR  sub_1TTlBgQ6rEPTt2h0XwANqej3 ───
+─── sim_42  cus_USiUb1DGaIUUSa  sub_1TTn3TQ6rEPTt2h0GK0vAIlU ───
 day   0: customer_created (standard, monthly)
 day  45: canceled
-day  89: recovered
+day  89: recovered  (skipped: sub is canceled, nothing to recover)
 
-─── sim_43  cus_USgYbaA1TBkN9m  sub_1TTlBmQ6rEPTt2h0KH6LwjDk ───
+─── sim_43  cus_USiU7hSo7q942Q  sub_1TTn3ZQ6rEPTt2h0Sd9OTeUY ───
 day   0: customer_created (enterprise, monthly)
 (no further events)
 
-─── sim_44  cus_USgYN65gDqPI3H  sub_1TTlBrQ6rEPTt2h01ntopAOm ───
+─── sim_44  cus_USiU82I9abCka9  sub_1TTn3eQ6rEPTt2h0mSJx96fB ───
 day   0: customer_created (standard, monthly)
 (no further events)
 
-─── sim_45  cus_USgZHRarsPDq4A  sub_1TTlBxQ6rEPTt2h0ndsW5O3c ───
+─── sim_45  cus_USiUS7LU6VRlgR  sub_1TTn3lQ6rEPTt2h088fz0Fez ───
 day   0: customer_created (standard, monthly)
-day 154: marked_past_due
+day 154: marked_past_due  (skipped: would advance to day 182 > 180 to fire renewal)
 
-─── sim_46  cus_USgZIsW7aZFCVe  sub_1TTlC3Q6rEPTt2h0uHWf3LUV ───
+─── sim_46  cus_USiUB7e6tZQpg8  sub_1TTn3qQ6rEPTt2h0NFvDMZSi ───
 day   0: customer_created (pro_plus, monthly)
 (no further events)
 
-─── sim_47  cus_USgZEZzEPc2NQx  sub_1TTlC9Q6rEPTt2h0jij7h1jp ───
+─── sim_47  cus_USiUBCfGq9Rbew  sub_1TTn3wQ6rEPTt2h0mj8MXgSr ───
 day   0: customer_created (standard, monthly)
 day  75: marked_past_due
-day 108: canceled
+day 127: recovered
 
-─── sim_48  cus_USgZhb1BW1huw5  sub_1TTlCEQ6rEPTt2h0YBjky11T ───
+─── sim_48  cus_USiVBPd3VYo5FO  sub_1TTn42Q6rEPTt2h0GHQ2wgMP ───
 day   0: customer_created (enterprise, monthly)
 day  11: tier_downgraded (enterprise → engage)
 
-─── sim_49  cus_USgZnvfg9DEIPD  sub_1TTlCKQ6rEPTt2h0PwrTmzd3 ───
+─── sim_49  cus_USiVhTylUDBjbh  sub_1TTn48Q6rEPTt2h0D3hyteAX ───
 day   0: customer_created (enterprise, yearly)
 (no further events)
 
-─── sim_50  cus_USgauNzFHbsDta  sub_1TTlDCQ6rEPTt2h0EKpBFWKK ───
+─── sim_50  cus_USiVf6IalwiQDr  sub_1TTn4pQ6rEPTt2h0Muw2t2LG ───
 day   6: customer_created (standard, monthly)
 (no further events)
 
-─── sim_51  cus_USgaKR0Xv5y90Q  sub_1TTlDMQ6rEPTt2h0mNMcYaQn ───
+─── sim_51  cus_USiWumTUS6fA0O  sub_1TTn51Q6rEPTt2h0eRXaeXTX ───
 day  14: customer_created (standard, monthly)
 (no further events)
 
-─── sim_52  cus_USgaGaTCCtaPFE  sub_1TTlDWQ6rEPTt2h0fqqTi0mX ───
+─── sim_52  cus_USiWIXhuAYQKQc  sub_1TTn5IQ6rEPTt2h0OGpy97up ───
 day  38: customer_created (engage, monthly)
 (no further events)
 
-─── sim_53  cus_USgabU16lOUD8g  sub_1TTlDcQ6rEPTt2h0L7b4wcZV ───
+─── sim_53  cus_USiWJT6qqEo0mX  sub_1TTn5NQ6rEPTt2h04ULQ3fAo ───
 day  39: customer_created (standard, monthly)
 (no further events)
 
-─── sim_54  cus_USgac0xymaug29  sub_1TTlDiQ6rEPTt2h0HPvIph4D ───
+─── sim_54  cus_USiWIVwPp6W5WL  sub_1TTn5UQ6rEPTt2h0Fn8JvpnQ ───
 day  44: customer_created (pro_plus, monthly)
 (no further events)
 
-─── sim_55  cus_USgcQlwA21KYT1  sub_1TTlEsQ6rEPTt2h0bDWvMAgO ───
+─── sim_55  cus_USiX1lkS5vVAn6  sub_1TTn6VQ6rEPTt2h0UwrWyVGe ───
 day  51: customer_created (engage, monthly)
 (no further events)
 
-─── sim_56  cus_USgctv7YNXbEWv  sub_1TTlEyQ6rEPTt2h0zu2j9eVm ───
+─── sim_56  cus_USiXaIiXE0Vccm  sub_1TTn6bQ6rEPTt2h0NIdOD6ud ───
 day  61: customer_created (standard, monthly)
 (no further events)
 
-─── sim_57  cus_USgd3FgRCjS2j3  sub_1TTlFxQ6rEPTt2h0NHN8kLdg ───
+─── sim_57  cus_USiYedljhgyHE1  sub_1TTn7MQ6rEPTt2h0ZOqanHKo ───
 day  74: customer_created (pro_plus, monthly)
 day 142: tier_upgraded (pro_plus → engage)
 
-─── sim_58  cus_USgebWqvIP6QCa  sub_1TTlGpQ6rEPTt2h00pD3du0c ───
+─── sim_58  cus_USiZSSPeS7KIGQ  sub_1TTn87Q6rEPTt2h07IJie7uX ───
 day  75: customer_created (standard, monthly)
 (no further events)
 
-─── sim_59  cus_USgeORqu8Vi663  sub_1TTlGuQ6rEPTt2h0pHoG1D8q ───
+─── sim_59  cus_USiZIVd40icCEo  sub_1TTn8DQ6rEPTt2h0TwyXfzwq ───
 day  76: customer_created (standard, monthly)
 (no further events)
 
-─── sim_60  cus_USgfORGJtdysvj  sub_1TTlIGQ6rEPTt2h0v1H3zpUO ───
+─── sim_60  cus_USiai7RhQC9U3M  sub_1TTn9UQ6rEPTt2h0gcfpm8tD ───
 day  93: customer_created (enterprise, yearly)
 (no further events)
 
-─── sim_61  cus_USgfLOn3ESAAtk  sub_1TTlIQQ6rEPTt2h0t4rRsLdm ───
+─── sim_61  cus_USiajdFiKELvNv  sub_1TTn9lQ6rEPTt2h0ywmMXk6D ───
 day 104: customer_created (standard, yearly)
 (no further events)
 
-─── sim_62  cus_USgfNj6XhC076W  sub_1TTlIWQ6rEPTt2h06pHREtPF ───
+─── sim_62  cus_USibotjCH5MrFh  sub_1TTn9qQ6rEPTt2h0DJkb9vWn ───
 day 107: customer_created (enterprise, monthly)
 (no further events)
 
-─── sim_63  cus_USgg1e10N9CjBm  sub_1TTlIlQ6rEPTt2h0OZGEwRpK ───
+─── sim_63  cus_USibeRjq80PyKC  sub_1TTn9wQ6rEPTt2h0E3rFSERI ───
 day 112: customer_created (standard, monthly)
 (no further events)
 
-─── sim_64  cus_USggmevdoC8uU9  sub_1TTlJTQ6rEPTt2h0UH3Qdalb ───
+─── sim_64  cus_USibKsBX8Koxnt  sub_1TTnA6Q6rEPTt2h0jvsg1aOy ───
 day 115: customer_created (standard, monthly)
 (no further events)
 
-─── sim_65  cus_USgiMZMigf4LI0  sub_1TTlKzQ6rEPTt2h02LdOj8JV ───
+─── sim_65  cus_USid2xR25iqQ9j  sub_1TTnBlQ6rEPTt2h07h1Hcijc ───
 day 119: customer_created (pro_plus, monthly)
 (no further events)
 
-─── sim_66  cus_USgjvql8B7145s  sub_1TTlLrQ6rEPTt2h0HWYDPXTz ───
+─── sim_66  cus_USidQoCwE7fV6E  sub_1TTnCaQ6rEPTt2h0TSWtivX4 ───
 day 124: customer_created (standard, yearly)
 (no further events)
 
-─── sim_67  cus_USgjmEPnqWqKkT  sub_1TTlLxQ6rEPTt2h0PL08tWzT ───
+─── sim_67  cus_USie5d2pGV2GZ7  sub_1TTnClQ6rEPTt2h0NP6XOIFl ───
 day 129: customer_created (standard, monthly)
 (no further events)
 
-─── sim_68  cus_USgj9fJU75qWoT  sub_1TTlM3Q6rEPTt2h05w7w2Er2 ───
+─── sim_68  cus_USiezvEdFYhCqN  sub_1TTnCqQ6rEPTt2h06aWBwHh4 ───
 day 130: customer_created (standard, monthly)
 day 140: canceled
-day 177: recovered
+day 177: recovered  (skipped: sub is canceled, nothing to recover)
 
-─── sim_69  cus_USgl1zfEzN57gT  sub_1TTlOGQ6rEPTt2h0MccWtP0l ───
+─── sim_69  cus_USigP6aIUImaCU  sub_1TTnEzQ6rEPTt2h0KlHwvINk ───
 day 141: customer_created (enterprise, yearly)
-day 155: marked_past_due
-day 176: recovered
+day 155: marked_past_due  (skipped: would advance to day 507 > 180 to fire renewal)
+day 176: recovered  (skipped: sub is active, nothing to recover)
 
-─── sim_70  cus_USgmHJxTjUrYAF  sub_1TTlOrQ6rEPTt2h0NoXmicCi ───
+─── sim_70  cus_USigU4B1wEoT0D  sub_1TTnFXQ6rEPTt2h0zmbsjUXd ───
 day 146: customer_created (pro_plus, monthly)
 (no further events)
 
-─── sim_71  cus_USgmTnCZmdLPgw  sub_1TTlOyQ6rEPTt2h0FlvHBoJR ───
+─── sim_71  cus_USii13JwEqD442  sub_1TTnGyQ6rEPTt2h0B4l0KWp8 ───
 day 170: customer_created (pro_plus, monthly)
 (no further events)
