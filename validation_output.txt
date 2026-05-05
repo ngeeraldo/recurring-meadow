@@ -1,8 +1,8 @@
 MRR Validation — multi-stage cross-check of sql/mrr_monthly.sql
-Generated: 2026-05-05T00:32:01.156092+00:00
+Generated: 2026-05-05T01:12:23.855143+00:00
 
 Querying BigQuery sql/mrr_monthly.sql...
-  got 6 months from BigQuery
+  got 6 historical months + 1 current (2026-05-01) from BigQuery
 
 ======================================================================
 Stage 1 — Sanity check (analytical projection vs BigQuery, ±20%)
@@ -25,15 +25,16 @@ Walking customer invoices in Python (for stage 2)...
 Stage 2 — MRR Validation Report (Python walk vs BigQuery, ±$0.01)
 ======================================================================
 
-  Month          BigQuery SQL    Python Valid.        Delta    Status
-  2025-11-01       $   836.50       $   836.50   $     0.00    PASS
-  2025-12-01       $   846.50       $   846.50   $     0.00    PASS
-  2026-01-01       $   856.50       $   856.50   $     0.00    PASS
-  2026-02-01       $   896.00       $   896.00   $     0.00    PASS
-  2026-03-01       $   985.50       $   985.50   $     0.00    PASS
-  2026-04-01       $   995.50       $   995.50   $     0.00    PASS
+  Month              BigQuery SQL    Python Valid.        Delta    Status
+  2025-11-01           $   836.50       $   836.50   $     0.00    PASS
+  2025-12-01           $   846.50       $   846.50   $     0.00    PASS
+  2026-01-01           $   856.50       $   856.50   $     0.00    PASS
+  2026-02-01           $   896.00       $   896.00   $     0.00    PASS
+  2026-03-01           $   985.50       $   985.50   $     0.00    PASS
+  2026-04-01           $   995.50       $   995.50   $     0.00    PASS
+  2026-05-01 (now)     $   980.50       $   980.50   $     0.00    PASS
 
-Stage 2 passed. (6 months within $0.01)
+Stage 2 passed. (7 rows within $0.01)
 
 ======================================================================
 All checks passed.
