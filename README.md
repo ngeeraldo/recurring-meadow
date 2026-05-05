@@ -33,7 +33,7 @@ BIGQUERY_PROJECT=your-gcp-project-id
 BIGQUERY_DB=stripe_raw 
 ```
 
-BigQuery uses Application Default Credentials — once per machine:
+BigQuery uses Application Default Credentials. You'll need a GCP project with the BigQuery API enabled. The ETL creates the dataset automatically.
 
 ```bash
 gcloud auth application-default login
