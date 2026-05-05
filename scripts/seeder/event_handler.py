@@ -6,6 +6,8 @@ auto-cancellation, status drift, etc.).
 
 Public surface used by the orchestrator:
 - ``handle_event`` — dispatch one ``simulator.Event`` against Stripe.
+  Returns ``None`` on success or a short reason string when the event was
+  skipped, so the orchestrator can record skips for the final run log.
 - ``advance_clock_to`` — chunked clock advance with the SIMULATION_DAYS cap;
   also called by the catch-up loop in __main__.run().
 
@@ -14,6 +16,8 @@ imported here lazily inside ``_create_customer_in_stripe`` to avoid a circular
 import (event_handler is loaded *during* __main__'s top-level execution).
 """
 from __future__ import annotations
+
+from typing import Optional
 
 import stripe
 
@@ -81,13 +85,24 @@ def _create_customer_in_stripe(
     )
 
 
+def _skip(reason: str) -> str:
+    """Print the skip reason for live console output and return it for the run log."""
+    print(f"      (skipped: {reason})")
+    return reason
+
+
 def handle_event(
     event: simulator.Event,
     states: dict,
     price_map: dict,
     base_frozen_time: int,
-) -> None:
-    """Dispatch one simulator event to Stripe."""
+) -> Optional[str]:
+    """Dispatch one simulator event to Stripe.
+
+    Returns ``None`` on success, or a short reason string when the event
+    was skipped (so the orchestrator can record skips per-event for the
+    final run log).
+    """
     if event.type == "customer_created":
         if event.sim_id not in states:
             states[event.sim_id] = _create_customer_in_stripe(
@@ -98,11 +113,11 @@ def handle_event(
                 base_frozen_time=base_frozen_time,
                 price_map=price_map,
             )
-        return
+        return None
 
     state = states.get(event.sim_id)
     if state is None:
-        return  # event for unknown customer; shouldn't happen
+        return _skip(f"unknown customer {event.sim_id}")
 
     # Stripe's actual state can drift from our local tracking — most notably,
     # Smart Retries can auto-cancel a past_due sub during a clock advance.
@@ -111,56 +126,59 @@ def handle_event(
         live = stripe.Subscription.retrieve(state.sub_id)
         state.current_state = live.status
     except stripe.error.InvalidRequestError:
-        print(f"      (sub {state.sub_id} unretrievable — skip)")
-        return
+        return _skip(f"sub {state.sub_id} unretrievable")
 
     if event.type in ("tier_upgraded", "tier_downgraded"):
         if state.current_state in ("canceled", "incomplete_expired"):
-            print(f"      (sub is {state.current_state}, cannot tier-change — skip)")
-            return
+            return _skip(f"sub is {state.current_state}, cannot tier-change")
         advance_clock_to(state, event.day, base_frozen_time)
         new_tier = event.payload["to"]
         subscriptions.change_tier(
             state.sub_id, price_map[(new_tier, state.current_cadence)],
         )
         state.current_tier = new_tier
+        return None
 
-    elif event.type == "marked_past_due":
+    if event.type == "marked_past_due":
         if state.current_state != "active":
-            print(f"      (sub is {state.current_state}, not active — skip)")
-            return
-        # The +31d advance below is what actually fires the renewal failure
-        # in Stripe. If that would cross past today (SIMULATION_DAYS), skip
-        # the event — we'd rather under-report past_due than fabricate
-        # future-dated Stripe data.
-        needed_day = event.day + 31
-        if needed_day > config.SIMULATION_DAYS:
-            print(f"      (need day {needed_day} > {config.SIMULATION_DAYS} to fire renewal — skip)")
-            return
+            return _skip(f"sub is {state.current_state}, not active")
+        # Drive the failed-renewal advance off Stripe's own period boundary
+        # rather than a blind +31d. Crossing current_period_end by exactly
+        # one day fires one failed payment attempt and parks the sub in
+        # past_due. Smart Retries are scheduled at later clock times; since
+        # we don't advance further, they never fire and Stripe never auto-
+        # cancels the sub before the simulator gets a chance to recover it.
         advance_clock_to(state, event.day, base_frozen_time)
+        sub = stripe.Subscription.retrieve(state.sub_id)
+        renewal_day = (sub.current_period_end - base_frozen_time) // 86_400
+        target_day = renewal_day + 1
+        if target_day > config.SIMULATION_DAYS:
+            return _skip(
+                f"would advance to day {target_day} > {config.SIMULATION_DAYS} "
+                f"to fire renewal"
+            )
         subscriptions.set_failing_card(state.stripe_customer_id)
-        # +31d to fire the next renewal failure.
-        advance_clock_to(state, state.clock_day + 31, base_frozen_time)
+        advance_clock_to(state, target_day, base_frozen_time)
         subscriptions.wait_for_status_change(state.sub_id, from_status="active")
         state.current_state = "past_due"
+        print(f"      (advanced to day {target_day} — past_due fired)")
+        return None
 
-    elif event.type == "recovered":
-        if state.current_state == "past_due":
-            subscriptions.recover_from_past_due(
-                state.stripe_customer_id, state.sub_id,
-            )
-            subscriptions.wait_for_status_change(
-                state.sub_id, from_status="past_due",
-            )
-            state.current_state = "active"
-        else:
-            # canceled, active, or anything else — nothing to recover from.
-            print(f"      (sub is {state.current_state}, nothing to recover — skip)")
+    if event.type == "recovered":
+        if state.current_state != "past_due":
+            return _skip(f"sub is {state.current_state}, nothing to recover")
+        subscriptions.recover_from_past_due(
+            state.stripe_customer_id, state.sub_id,
+        )
+        subscriptions.wait_for_status_change(
+            state.sub_id, from_status="past_due",
+        )
+        state.current_state = "active"
+        return None
 
-    elif event.type == "canceled":
+    if event.type == "canceled":
         if state.current_state == "canceled":
-            print("      (sub already canceled in Stripe — skip)")
-            return
+            return _skip("sub already canceled in Stripe")
         advance_clock_to(state, event.day, base_frozen_time)
         try:
             subscriptions.cancel_subscription(state.sub_id)
@@ -173,3 +191,6 @@ def handle_event(
                 raise
             print("      (sub auto-canceled during clock advance — treating as success)")
         state.current_state = "canceled"
+        return None
+
+    return None

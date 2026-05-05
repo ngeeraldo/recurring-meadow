@@ -1,9 +1,15 @@
 """Tunable knobs for the seeder simulation.
 
-Per-day transition probabilities are derived from the monthly figures in
-refs/seeder.md by simple division by 30. This is approximate (the exact
-conversion is the matrix root M^(1/30)) but well within noise for a
-180-day run with 10-16 customers.
+Per-day transition probabilities for FROM_ACTIVE / FROM_CANCELED are derived
+from the monthly figures in refs/seeder.md by simple division by 30. This is
+approximate (the exact conversion is the matrix root M^(1/30)) but well within
+noise for a 180-day run with 10-16 customers.
+
+FROM_PAST_DUE is the exception: dwell time in past_due is bounded by Stripe's
+Smart Retry window (~21 days, after which dunning auto-cancels), not a calendar
+month, so the divisor is 21. The simulator only models the active (recovery)
+exit — Stripe handles the canceled exit automatically when retries exhaust and
+the simulator declined to roll recovery within that window.
 """
 
 # --- Simulation scale -----------------------------------------------------
@@ -44,8 +50,7 @@ FROM_ACTIVE = {
 }
 
 FROM_PAST_DUE = {
-    "active":   0.55 / 30,   # 1.833%
-    "canceled": 0.35 / 30,   # 1.167%
+    "active":   0.50 / 21,   # 2.381% — cumulative ~40% recovery within the 21d window
 }
 
 FROM_CANCELED = {

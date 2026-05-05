@@ -173,6 +173,40 @@ def test_per_customer_block_includes_stripe_ids_in_header():
     assert "─── sim_1  cus_ABC123  sub_XYZ789 ───" in text
 
 
+def test_per_customer_block_renders_skip_annotation_for_skipped_event():
+    events = [
+        _ev("sim_1", 0, "customer_created", tier="standard", cadence="month"),
+        _ev("sim_1", 47, "marked_past_due"),
+        _ev("sim_1", 60, "recovered"),
+    ]
+    text = _minimal_log(
+        events=events,
+        skips={2: "sub is canceled, nothing to recover"},
+    )
+    assert "day  60: recovered  (skipped: sub is canceled, nothing to recover)" in text
+    # Non-skipped events stay clean (no skip suffix on the past_due line)
+    line = next(ln for ln in text.splitlines() if "day  47: marked_past_due" in ln)
+    assert "(skipped:" not in line
+
+
+def test_per_customer_block_renders_skip_annotation_with_target_day():
+    """End-of-sim past_due skips should surface the renewal day in the log."""
+    events = [
+        _ev("sim_1", 0, "customer_created", tier="standard", cadence="month"),
+        _ev("sim_1", 154, "marked_past_due"),
+    ]
+    text = _minimal_log(
+        events=events,
+        skips={1: "would advance to day 185 > 180"},
+    )
+    assert "day 154: marked_past_due  (skipped: would advance to day 185 > 180)" in text
+
+
+def test_skips_dict_is_optional_and_defaults_to_none():
+    text = _minimal_log()
+    assert "(skipped:" not in text
+
+
 def test_customers_sorted_by_numeric_suffix_not_lexicographically():
     """Regression: string sort produces sim_1, sim_10, sim_2, sim_20 — looks broken."""
     sim_ids = ["sim_1", "sim_2", "sim_10", "sim_20"]

@@ -72,6 +72,7 @@ def format_run_log(
     tier_counts: Counter,
     cadence_counts: Counter,
     generated_on: str,
+    skips: dict[int, str] | None = None,
 ) -> str:
     parts: list[str] = []
     parts.append(
@@ -102,16 +103,20 @@ def format_run_log(
     parts.append("")
 
     events_by_sim = defaultdict(list)
-    for ev in events:
-        events_by_sim[ev.sim_id].append(ev)
+    for i, ev in enumerate(events):
+        events_by_sim[ev.sim_id].append((i, ev))
 
+    skips = skips or {}
     for state in sorted(states.values(), key=lambda s: _sim_id_sort_key(s.sim_id)):
         parts.append(
             f"─── {state.sim_id}  {state.stripe_customer_id}  {state.sub_id} ───"
         )
-        cust_events = sorted(events_by_sim.get(state.sim_id, []), key=lambda e: e.day)
-        for ev in cust_events:
-            parts.append(f"day {ev.day:>3}: {format_event(ev)}")
+        cust_events = sorted(events_by_sim.get(state.sim_id, []), key=lambda ie: ie[1].day)
+        for idx, ev in cust_events:
+            line = f"day {ev.day:>3}: {format_event(ev)}"
+            if idx in skips:
+                line += f"  (skipped: {skips[idx]})"
+            parts.append(line)
         if len(cust_events) <= 1:
             parts.append("(no further events)")
         parts.append("")

@@ -67,11 +67,16 @@ def run() -> None:
     )
 
     states: dict = {}
+    skips: dict[int, str] = {}
     started = time.monotonic()
 
     for i, event in enumerate(events):
         print(f"  [{i+1:>3}/{len(events)}] day={event.day:>3} {event.type:<18} {event.sim_id}")
-        event_handler.handle_event(event, states, price_map, base_frozen_time)
+        skip_reason = event_handler.handle_event(
+            event, states, price_map, base_frozen_time,
+        )
+        if skip_reason is not None:
+            skips[i] = skip_reason
 
     # Catch up every clock to "now" so customers without events still
     # generate their full renewal/invoice history through the simulation
@@ -122,6 +127,7 @@ def run() -> None:
         tier_counts=tier_counts,
         cadence_counts=cadence_counts,
         generated_on=datetime.now(timezone.utc).date().isoformat(),
+        skips=skips,
     )
     log_path = Path(__file__).resolve().parents[2] / "output" / "seeder_events.txt"
     log_path.write_text(log_text)

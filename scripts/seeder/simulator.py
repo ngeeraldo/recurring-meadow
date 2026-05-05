@@ -92,21 +92,12 @@ def _roll_active(cust: SimCustomer, rng: random.Random, day: int, events: list) 
 
 
 def _roll_past_due(cust: SimCustomer, rng: random.Random, day: int, events: list) -> None:
-    p = config.FROM_PAST_DUE
-    roll = rng.random()
-    cum = 0.0
-
-    cum += p["active"]
-    if roll < cum:
+    # Only the recovery exit is simulator-driven. Stripe's Smart Retries will
+    # auto-cancel the sub when the retry schedule exhausts, so we don't need
+    # to synthesize canceled events from past_due here.
+    if rng.random() < config.FROM_PAST_DUE["active"]:
         cust.state = "active"
         events.append(Event(day=day, sim_id=cust.sim_id, type="recovered"))
-        return
-
-    cum += p["canceled"]
-    if roll < cum:
-        cust.state = "canceled"
-        events.append(Event(day=day, sim_id=cust.sim_id, type="canceled"))
-        return
 
 
 def _roll_canceled(cust: SimCustomer, rng: random.Random, day: int, events: list) -> None:

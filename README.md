@@ -19,9 +19,11 @@ Run the seeder to generate the full dataset that Steps 2 and 3 (BigQuery ETL + M
 python -m scripts.seeder
 ```
 
-This runs the simulator (pure-Python, deterministic via `RNG_SEED` in `scripts/config.py`) to produce a chronological event log, then replays the events against Stripe — creating customers with test clocks at the appropriate simulated dates, attaching working/failing payment methods, transitioning subscriptions through `active` / `past_due` / `canceled` / tier changes.
+This runs the simulator (pure-Python, deterministic via `RNG_SEED` in [scripts/seeder/config.py](scripts/seeder/config.py)) to produce a chronological event log, then replays the events against Stripe — creating customers with test clocks at the appropriate simulated dates, attaching working/failing payment methods, transitioning subscriptions through `active` / `past_due` / `canceled` / tier changes.
 
-Defaults (set in [scripts/config.py](scripts/config.py)):
+When the run finishes, a structured summary + per-customer event timeline is written to [output/seeder_events.txt](output/seeder_events.txt). It serves as audit-trail evidence of what data was seeded for a given seed and is committed to the repo.
+
+Defaults (set in [scripts/seeder/config.py](scripts/seeder/config.py)):
 
 - 10 starting customers
 - ~1 new customer/month average (~6 net-new across 6 months)

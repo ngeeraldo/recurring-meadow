@@ -65,6 +65,28 @@ def test_enterprise_customer_never_emits_upgrade(monkeypatch):
     assert roster[0].tier == "enterprise"
 
 
+def test_past_due_never_emits_canceled(monkeypatch):
+    """Stripe handles past_due → canceled via dunning retry exhaustion.
+    The simulator must not synthesize cancel events from past_due — even
+    if a 'canceled' key is present in FROM_PAST_DUE, it should be ignored."""
+    monkeypatch.setattr(config, "INITIAL_CUSTOMER_COUNT", 1)
+    monkeypatch.setattr(config, "INITIAL_TIER_WEIGHTS", {"standard": 1.0})
+    monkeypatch.setattr(config, "FROM_ACTIVE", {
+        "past_due": 1.0, "canceled": 0.0, "upgrade": 0.0, "downgrade": 0.0,
+    })
+    # Never recover — and even with a stale canceled key, no canceled should fire.
+    monkeypatch.setattr(config, "FROM_PAST_DUE", {"active": 0.0, "canceled": 1.0})
+    monkeypatch.setattr(config, "SIMULATION_DAYS", 30)
+    monkeypatch.setattr(config, "ACQUISITION_P_PER_ROLL", 0.0)
+
+    _, events = simulator.simulate(seed=42)
+    canceled = [e for e in events if e.type == "canceled"]
+
+    assert canceled == [], (
+        f"past_due rolls must not emit canceled events, got: {canceled}"
+    )
+
+
 def test_tier_change_payloads_carry_from_and_to():
     """When tier changes do fire, payload should include from/to."""
     roster, events = simulator.simulate(seed=42)
