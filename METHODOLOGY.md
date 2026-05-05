@@ -51,6 +51,9 @@ Stage 3 verification is human-in-the-loop — the tool surfaces customer-level d
 **Quantity=1 per customer.** 
 All seed customers have a single screen, producing 5-10x smaller MRR magnitudes. The methodology correctly multiplies `unit_amount × quantity`; the seed just doesn't support it. However, the seed does support subscription changes (tier upgrades / downgrades), so we have confidence that the MRR correctly handles subscription modifications.
 
+**Math duplication between production and validation.** The period-spreading 
+SQL is duplicated across `mrr_monthly.sql`, `validate_mrr.py`, and the Python walk. All three agree today, but a change to one wouldn't propagate. The fix is to make `mrr_monthly.sql` expose per-customer rows and aggregate from there — not done within the 2-day window because refactoring the most validated piece of the stack carried regression risk.
+
 ## Architecture for production sync
 Webhook-driven incremental sync (subscribe to invoice.paid, 
 customer.subscription.updated, etc.) for freshness, plus a daily batch 
