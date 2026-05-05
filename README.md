@@ -1,16 +1,9 @@
 # Recurring Meadow
 
-End-to-end MRR reporting pipeline backed by Stripe test data: a Python seeder that fills a Stripe sandbox with realistic subscription history, a BigQuery ETL, a SQL MRR query, a FastAPI wrapper, and a React dashboard.
+End-to-end MRR reporting pipeline backed by Stripe test data. 
+A Python seeder that fills a Stripe sandbox with realistic subscription history, a BigQuery ETL, a SQL MRR query, a FastAPI wrapper, and a React dashboard.
 
-```
-Stripe (test mode)  ──seeder──►  customers + subs + invoices
-        │
-     scripts/etl ──►  BigQuery: stripe_raw.invoice_line_items
-                                          │
-                                  sql/mrr_monthly.sql
-                                          │
-                                    api/main.py  ──►  frontend/ (Vite + Recharts)
-```
+![MRR Dashboard](output/screenshot.png)
 
 ---
 
@@ -96,20 +89,17 @@ Open <http://localhost:5173>.
 
 ## Validation
 
-Cross-checks the BigQuery SQL against an independent per-customer Python walk:
+Cross-checks the BigQuery SQL against an independent per-customer Python walk, plus a per-customer audit:
 
 ```bash
 python -m scripts.validate_mrr
 ```
 
-Two stages:
-
-- **Stage 1 — Sanity check** (±20%): compares the BigQuery total against an analytical MRR projection derived from `catalog.PLANS` + the seeder config. Catches order-of-magnitude regressions.
-- **Stage 2 — MRR validation report** (±$0.01): walks every customer's paid invoices in Python with the same period-spreading logic as the SQL and compares per-month totals. Same source data, different code path — agreement validates the SQL's internal consistency.
+Three stages: a sanity check on totals, a per-customer reconstruction comparing Python and BigQuery to the cent, and a per-customer audit pairing events with computed MRR. Full details in [METHODOLOGY.md](METHODOLOGY.md).
 
 Output goes to stdout and [output/validation_output.txt](output/validation_output.txt). On any divergence in Stage 2, a per-customer breakdown for the failing month is appended.
 
-For methodology background, see [METHODOLOGY.md](METHODOLOGY.md).
+The committed [output/seeder_events.txt](output/seeder_events.txt) and [output/validation_output.txt](output/validation_output.txt) are from my most recent end-to-end run. They show what the seeder timeline and validation report look like without requiring you to re-run the pipeline. Both files get overwritten when you re-run the seeder or validation script.
 
 ---
 
