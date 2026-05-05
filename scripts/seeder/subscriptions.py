@@ -53,6 +53,5 @@ def change_tier(sub_id: str, new_price_id: str) -> stripe.Subscription:
     item_id = sub["items"].data[0].id
     return stripe.Subscription.modify(
         sub_id,
-        items=[{"id": item_id, "price": new_price_id}],
-        proration_behavior="none",
+        items=[{"id": item_id, "price": new_price_id}]
     )

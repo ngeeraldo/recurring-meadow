@@ -313,6 +313,89 @@ def _money(d: Decimal) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Stage 3 helpers (per-customer spot check)
+# ---------------------------------------------------------------------------
+
+SEEDER_LOG_PATH = REPO_ROOT / "output" / "seeder_events.txt"
+
+
+def _parse_seeder_events(path: Path) -> dict:
+    """Parse output/seeder_events.txt into ``{customer_id: {sim_id, sub_id, events}}``.
+
+    Returns ``{}`` if the file doesn't exist. Iteration order matches the file
+    (sim_0, sim_1, …) thanks to dict insertion order.
+    """
+    if not path.exists():
+        return {}
+
+    out: dict = {}
+    blocks = path.read_text().split("\n\n")
+    for block in blocks:
+        lines = [ln for ln in block.splitlines() if ln.strip()]
+        if not lines or not lines[0].startswith("─── "):
+            continue
+        # Header form: "─── sim_0  cus_xxx  sub_yyy ───"
+        header_parts = lines[0].split()
+        # parts[0] == "───", parts[-1] == "───", three identifiers in between
+        if len(header_parts) < 5:
+            continue
+        sim_id, customer_id, sub_id = header_parts[1], header_parts[2], header_parts[3]
+        out[customer_id] = {
+            "sim_id": sim_id,
+            "sub_id": sub_id,
+            "events": lines[1:],
+        }
+    return out
+
+
+def _emit_customer_spot_check(
+    events_by_cus: dict,
+    per_customer_python: dict,
+    window: list,
+    fh,
+) -> None:
+    """Per-customer block: events from the seeder log + MRR by month."""
+    for customer_id, info in events_by_cus.items():
+        _emit("", fh)
+        _emit(f"─── {info['sim_id']}  {customer_id} ───", fh)
+        _emit("  Events:", fh)
+        for ev in info["events"]:
+            _emit(f"    {ev}", fh)
+        _emit("  MRR by month:", fh)
+        cus_mrr = per_customer_python.get(customer_id, {})
+        for m in window:
+            v = cus_mrr.get(m, Decimal(0))
+            _emit(f"    {m.isoformat()}    {_money(v):>12}", fh)
+
+
+def _run_spot_check(per_customer_python: dict, fh) -> None:
+    """Stage 3: pair each seeded customer's event timeline with its BQ MRR by month."""
+    _emit("", fh)
+    _emit("=" * 70, fh)
+    _emit("Stage 3 — Per-customer spot check (events ↔ MRR)", fh)
+    _emit("=" * 70, fh)
+
+    events_by_cus = _parse_seeder_events(SEEDER_LOG_PATH)
+    if not events_by_cus:
+        _emit(
+            f"Skipped — {SEEDER_LOG_PATH} not found. Re-run scripts.seeder.",
+            fh,
+        )
+        return
+
+    _emit(
+        f"Pairs each customer's events with their per-month MRR so the "
+        f"actions and the numbers can be eyeballed together. "
+        f"Source: {SEEDER_LOG_PATH.name} + Stage 2 walk.",
+        fh,
+    )
+
+    _emit_customer_spot_check(
+        events_by_cus, per_customer_python, _window_months(), fh,
+    )
+
+
+# ---------------------------------------------------------------------------
 # Stage runners
 # ---------------------------------------------------------------------------
 
@@ -564,6 +647,11 @@ def validate() -> int:
             bq,
             fh,
         )
+
+        # --- Stage 3: per-customer spot check (informational) ---------------
+        # Always runs, doesn't gate the exit code. Reuses Stage 2's already-
+        # validated per_customer_python — no extra BigQuery query.
+        _run_spot_check(per_customer_python, fh)
 
         _emit("", fh)
         _emit("=" * 70, fh)

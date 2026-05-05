@@ -1,5 +1,5 @@
 MRR Validation — multi-stage cross-check of sql/mrr_monthly.sql
-Generated: 2026-05-05T20:25:13.761199+00:00
+Generated: 2026-05-05T23:14:11.543857+00:00
 
 Querying BigQuery sql/mrr_monthly.sql...
   got 6 historical months + 1 current (2026-05-01) from BigQuery
@@ -9,12 +9,12 @@ Stage 1 — Sanity check (analytical projection vs BigQuery, ±20%)
 ======================================================================
 
   Month            Expected     BigQuery       Δ%    Status
-  2025-11-01     $   750.73   $   836.50   +11.4%      PASS
-  2025-12-01     $   765.71   $   871.50   +13.8%      PASS
-  2026-01-01     $   780.00   $   891.50   +14.3%      PASS
-  2026-02-01     $   793.61   $   951.00   +19.8%      PASS
-  2026-03-01     $   806.58   $ 1,035.50   +28.4%      FAIL
-  2026-04-01     $   818.95   $ 1,070.50   +30.7%      FAIL
+  2025-11-01     $   750.73   $   825.00    +9.9%      PASS
+  2025-12-01     $   765.71   $   846.50   +10.6%      PASS
+  2026-01-01     $   780.00   $   856.50    +9.8%      PASS
+  2026-02-01     $   793.61   $   886.00   +11.6%      PASS
+  2026-03-01     $   806.58   $   996.14   +23.5%      FAIL
+  2026-04-01     $   818.95   $   995.50   +21.6%      FAIL
 
 Stage 1 failed for 2 month(s): ['2026-03-01', '2026-04-01']
 
@@ -26,15 +26,886 @@ Stage 2 — MRR Validation Report (Python walk vs BigQuery, ±$0.01)
 ======================================================================
 
   Month              BigQuery SQL    Python Valid.        Delta    Status
-  2025-11-01           $   836.50       $   836.50   $     0.00    PASS
-  2025-12-01           $   871.50       $   871.50   $     0.00    PASS
-  2026-01-01           $   891.50       $   891.50   $     0.00    PASS
-  2026-02-01           $   951.00       $   951.00   $     0.00    PASS
-  2026-03-01           $ 1,035.50       $ 1,035.50   $     0.00    PASS
-  2026-04-01           $ 1,070.50       $ 1,070.50   $     0.00    PASS
-  2026-05-01 (now)     $ 1,055.50       $ 1,055.50   $     0.00    PASS
+  2025-11-01           $   825.00       $   825.00   $     0.00    PASS
+  2025-12-01           $   846.50       $   846.50   $     0.00    PASS
+  2026-01-01           $   856.50       $   856.50   $     0.00    PASS
+  2026-02-01           $   886.00       $   886.00   $     0.00    PASS
+  2026-03-01           $   996.14       $   996.14   $     0.00    PASS
+  2026-04-01           $   995.50       $   995.50   $     0.00    PASS
+  2026-05-01 (now)     $   980.50       $   980.50   $     0.00    PASS
 
 Stage 2 passed. (7 rows within $0.01)
+
+======================================================================
+Stage 3 — Per-customer spot check (events ↔ MRR)
+======================================================================
+Pairs each customer's events with their per-month MRR so the actions and the numbers can be eyeballed together. Source: seeder_events.txt + Stage 2 walk.
+
+─── sim_0  cus_USmWnm3BLVx8sX ───
+  Events:
+    day   0: customer_created (pro_plus, monthly)
+    day 120: tier_upgraded (pro_plus → engage)
+  MRR by month:
+    2025-11-01      $    15.00
+    2025-12-01      $    15.00
+    2026-01-01      $    15.00
+    2026-02-01      $    15.00
+    2026-03-01      $    30.00
+    2026-04-01      $    30.00
+
+─── sim_1  cus_USmWfG8hhRohxe ───
+  Events:
+    day   0: customer_created (standard, monthly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $    10.00
+    2025-12-01      $    10.00
+    2026-01-01      $    10.00
+    2026-02-01      $    10.00
+    2026-03-01      $    10.00
+    2026-04-01      $    10.00
+
+─── sim_2  cus_USmWXtwMxsXUXw ───
+  Events:
+    day   0: customer_created (pro_plus, monthly)
+    day  49: canceled
+  MRR by month:
+    2025-11-01      $    15.00
+    2025-12-01      $    15.00
+    2026-01-01      $     0.00
+    2026-02-01      $     0.00
+    2026-03-01      $     0.00
+    2026-04-01      $     0.00
+
+─── sim_3  cus_USmWQkF64sT9qQ ───
+  Events:
+    day   0: customer_created (engage, monthly)
+    day   6: canceled
+  MRR by month:
+    2025-11-01      $    30.00
+    2025-12-01      $     0.00
+    2026-01-01      $     0.00
+    2026-02-01      $     0.00
+    2026-03-01      $     0.00
+    2026-04-01      $     0.00
+
+─── sim_4  cus_USmWrMSqZEZuJG ───
+  Events:
+    day   0: customer_created (standard, monthly)
+    day  78: marked_past_due
+  MRR by month:
+    2025-11-01      $    10.00
+    2025-12-01      $    10.00
+    2026-01-01      $    10.00
+    2026-02-01      $     0.00
+    2026-03-01      $     0.00
+    2026-04-01      $     0.00
+
+─── sim_5  cus_USmWwv5MF93XVa ───
+  Events:
+    day   0: customer_created (standard, monthly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $    10.00
+    2025-12-01      $    10.00
+    2026-01-01      $    10.00
+    2026-02-01      $    10.00
+    2026-03-01      $    10.00
+    2026-04-01      $    10.00
+
+─── sim_6  cus_USmWLgLH8lFUFq ───
+  Events:
+    day   0: customer_created (standard, monthly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $    10.00
+    2025-12-01      $    10.00
+    2026-01-01      $    10.00
+    2026-02-01      $    10.00
+    2026-03-01      $    10.00
+    2026-04-01      $    10.00
+
+─── sim_7  cus_USmWFmQpflr5Bu ───
+  Events:
+    day   0: customer_created (pro_plus, monthly)
+    day  18: tier_downgraded (pro_plus → standard)
+  MRR by month:
+    2025-11-01      $    13.00
+    2025-12-01      $    10.00
+    2026-01-01      $    10.00
+    2026-02-01      $    10.00
+    2026-03-01      $    10.00
+    2026-04-01      $    10.00
+
+─── sim_8  cus_USmXYUMeoYguSg ───
+  Events:
+    day   0: customer_created (standard, monthly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $    10.00
+    2025-12-01      $    10.00
+    2026-01-01      $    10.00
+    2026-02-01      $    10.00
+    2026-03-01      $    10.00
+    2026-04-01      $    10.00
+
+─── sim_9  cus_USmXVLv69iDjgv ───
+  Events:
+    day   0: customer_created (pro_plus, monthly)
+    day 133: canceled
+  MRR by month:
+    2025-11-01      $    15.00
+    2025-12-01      $    15.00
+    2026-01-01      $    15.00
+    2026-02-01      $    15.00
+    2026-03-01      $    15.00
+    2026-04-01      $     0.00
+
+─── sim_10  cus_USmXoHwuoTRzmC ───
+  Events:
+    day   0: customer_created (pro_plus, monthly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $    15.00
+    2025-12-01      $    15.00
+    2026-01-01      $    15.00
+    2026-02-01      $    15.00
+    2026-03-01      $    15.00
+    2026-04-01      $    15.00
+
+─── sim_11  cus_USmXZxqjh5IYOn ───
+  Events:
+    day   0: customer_created (standard, monthly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $    10.00
+    2025-12-01      $    10.00
+    2026-01-01      $    10.00
+    2026-02-01      $    10.00
+    2026-03-01      $    10.00
+    2026-04-01      $    10.00
+
+─── sim_12  cus_USmXje3Ogu4Jrd ───
+  Events:
+    day   0: customer_created (enterprise, monthly)
+    day  86: canceled
+  MRR by month:
+    2025-11-01      $    45.00
+    2025-12-01      $    45.00
+    2026-01-01      $    45.00
+    2026-02-01      $     0.00
+    2026-03-01      $     0.00
+    2026-04-01      $     0.00
+
+─── sim_13  cus_USmXcWAToIYAnL ───
+  Events:
+    day   0: customer_created (standard, monthly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $    10.00
+    2025-12-01      $    10.00
+    2026-01-01      $    10.00
+    2026-02-01      $    10.00
+    2026-03-01      $    10.00
+    2026-04-01      $    10.00
+
+─── sim_14  cus_USmXKEMqbKCFj6 ───
+  Events:
+    day   0: customer_created (pro_plus, monthly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $    15.00
+    2025-12-01      $    15.00
+    2026-01-01      $    15.00
+    2026-02-01      $    15.00
+    2026-03-01      $    15.00
+    2026-04-01      $    15.00
+
+─── sim_15  cus_USmXOpmTkDsg5n ───
+  Events:
+    day   0: customer_created (pro_plus, monthly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $    15.00
+    2025-12-01      $    15.00
+    2026-01-01      $    15.00
+    2026-02-01      $    15.00
+    2026-03-01      $    15.00
+    2026-04-01      $    15.00
+
+─── sim_16  cus_USmXGdID14CHRA ───
+  Events:
+    day   0: customer_created (standard, yearly)
+    day 101: tier_upgraded (standard → pro_plus)
+  MRR by month:
+    2025-11-01      $     9.00
+    2025-12-01      $     9.00
+    2026-01-01      $     9.00
+    2026-02-01      $     9.00
+    2026-03-01      $     9.00
+    2026-04-01      $     9.00
+
+─── sim_17  cus_USmX1XHZJzcHpy ───
+  Events:
+    day   0: customer_created (standard, monthly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $    10.00
+    2025-12-01      $    10.00
+    2026-01-01      $    10.00
+    2026-02-01      $    10.00
+    2026-03-01      $    10.00
+    2026-04-01      $    10.00
+
+─── sim_18  cus_USmYRZm1bkfdEA ───
+  Events:
+    day   0: customer_created (pro_plus, monthly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $    15.00
+    2025-12-01      $    15.00
+    2026-01-01      $    15.00
+    2026-02-01      $    15.00
+    2026-03-01      $    15.00
+    2026-04-01      $    15.00
+
+─── sim_19  cus_USmYX5aeTsUMU1 ───
+  Events:
+    day   0: customer_created (engage, monthly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $    30.00
+    2025-12-01      $    30.00
+    2026-01-01      $    30.00
+    2026-02-01      $    30.00
+    2026-03-01      $    30.00
+    2026-04-01      $    30.00
+
+─── sim_20  cus_USmYZmwnimYdYL ───
+  Events:
+    day   0: customer_created (pro_plus, monthly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $    15.00
+    2025-12-01      $    15.00
+    2026-01-01      $    15.00
+    2026-02-01      $    15.00
+    2026-03-01      $    15.00
+    2026-04-01      $    15.00
+
+─── sim_21  cus_USmYsveQ5u0AbD ───
+  Events:
+    day   0: customer_created (standard, monthly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $    10.00
+    2025-12-01      $    10.00
+    2026-01-01      $    10.00
+    2026-02-01      $    10.00
+    2026-03-01      $    10.00
+    2026-04-01      $    10.00
+
+─── sim_22  cus_USmYbjNSoMBrJS ───
+  Events:
+    day   0: customer_created (standard, monthly)
+    day  45: marked_past_due
+  MRR by month:
+    2025-11-01      $    10.00
+    2025-12-01      $    10.00
+    2026-01-01      $     0.00
+    2026-02-01      $     0.00
+    2026-03-01      $     0.00
+    2026-04-01      $     0.00
+
+─── sim_23  cus_USmYCAa9Nag2ie ───
+  Events:
+    day   0: customer_created (standard, monthly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $    10.00
+    2025-12-01      $    10.00
+    2026-01-01      $    10.00
+    2026-02-01      $    10.00
+    2026-03-01      $    10.00
+    2026-04-01      $    10.00
+
+─── sim_24  cus_USmYUxkCBpfQMw ───
+  Events:
+    day   0: customer_created (pro_plus, monthly)
+    day   1: marked_past_due
+  MRR by month:
+    2025-11-01      $    15.00
+    2025-12-01      $     0.00
+    2026-01-01      $     0.00
+    2026-02-01      $     0.00
+    2026-03-01      $     0.00
+    2026-04-01      $     0.00
+
+─── sim_25  cus_USmYwP8jBNAn4i ───
+  Events:
+    day   0: customer_created (standard, monthly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $    10.00
+    2025-12-01      $    10.00
+    2026-01-01      $    10.00
+    2026-02-01      $    10.00
+    2026-03-01      $    10.00
+    2026-04-01      $    10.00
+
+─── sim_26  cus_USmYr3VcHSqbnk ───
+  Events:
+    day   0: customer_created (standard, yearly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $     9.00
+    2025-12-01      $     9.00
+    2026-01-01      $     9.00
+    2026-02-01      $     9.00
+    2026-03-01      $     9.00
+    2026-04-01      $     9.00
+
+─── sim_27  cus_USmYmyX96Xf5r3 ───
+  Events:
+    day   0: customer_created (pro_plus, monthly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $    15.00
+    2025-12-01      $    15.00
+    2026-01-01      $    15.00
+    2026-02-01      $    15.00
+    2026-03-01      $    15.00
+    2026-04-01      $    15.00
+
+─── sim_28  cus_USmYw6eoCYm7MU ───
+  Events:
+    day   0: customer_created (standard, monthly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $    10.00
+    2025-12-01      $    10.00
+    2026-01-01      $    10.00
+    2026-02-01      $    10.00
+    2026-03-01      $    10.00
+    2026-04-01      $    10.00
+
+─── sim_29  cus_USmZSJRHJFHzt7 ───
+  Events:
+    day   0: customer_created (standard, monthly)
+    day   6: marked_past_due
+  MRR by month:
+    2025-11-01      $    10.00
+    2025-12-01      $     0.00
+    2026-01-01      $     0.00
+    2026-02-01      $     0.00
+    2026-03-01      $     0.00
+    2026-04-01      $     0.00
+
+─── sim_30  cus_USmZy09rMwyBrf ───
+  Events:
+    day   0: customer_created (enterprise, monthly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $    45.00
+    2025-12-01      $    45.00
+    2026-01-01      $    45.00
+    2026-02-01      $    45.00
+    2026-03-01      $    45.00
+    2026-04-01      $    45.00
+
+─── sim_31  cus_USmZkdowGkwSOR ───
+  Events:
+    day   0: customer_created (standard, monthly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $    10.00
+    2025-12-01      $    10.00
+    2026-01-01      $    10.00
+    2026-02-01      $    10.00
+    2026-03-01      $    10.00
+    2026-04-01      $    10.00
+
+─── sim_32  cus_USmZ2McBFlublp ───
+  Events:
+    day   0: customer_created (pro_plus, monthly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $    15.00
+    2025-12-01      $    15.00
+    2026-01-01      $    15.00
+    2026-02-01      $    15.00
+    2026-03-01      $    15.00
+    2026-04-01      $    15.00
+
+─── sim_33  cus_USmZMMPyZVQglQ ───
+  Events:
+    day   0: customer_created (standard, monthly)
+    day 135: marked_past_due
+  MRR by month:
+    2025-11-01      $    10.00
+    2025-12-01      $    10.00
+    2026-01-01      $    10.00
+    2026-02-01      $    10.00
+    2026-03-01      $    10.00
+    2026-04-01      $     0.00
+
+─── sim_34  cus_USmZIIIHDENnGA ───
+  Events:
+    day   0: customer_created (standard, monthly)
+    day 119: marked_past_due
+  MRR by month:
+    2025-11-01      $    10.00
+    2025-12-01      $    10.00
+    2026-01-01      $    10.00
+    2026-02-01      $    10.00
+    2026-03-01      $     0.00
+    2026-04-01      $     0.00
+
+─── sim_35  cus_USmZBfsUJAeao0 ───
+  Events:
+    day   0: customer_created (standard, yearly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $     9.00
+    2025-12-01      $     9.00
+    2026-01-01      $     9.00
+    2026-02-01      $     9.00
+    2026-03-01      $     9.00
+    2026-04-01      $     9.00
+
+─── sim_36  cus_USmZNz9GkoMIff ───
+  Events:
+    day   0: customer_created (engage, monthly)
+    day 171: marked_past_due  (skipped: would advance to day 182 > 180 to fire renewal)
+  MRR by month:
+    2025-11-01      $    30.00
+    2025-12-01      $    30.00
+    2026-01-01      $    30.00
+    2026-02-01      $    30.00
+    2026-03-01      $    30.00
+    2026-04-01      $    30.00
+
+─── sim_37  cus_USmZOds315ESIH ───
+  Events:
+    day   0: customer_created (pro_plus, monthly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $    15.00
+    2025-12-01      $    15.00
+    2026-01-01      $    15.00
+    2026-02-01      $    15.00
+    2026-03-01      $    15.00
+    2026-04-01      $    15.00
+
+─── sim_38  cus_USmZFE61GQMCa0 ───
+  Events:
+    day   0: customer_created (engage, monthly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $    30.00
+    2025-12-01      $    30.00
+    2026-01-01      $    30.00
+    2026-02-01      $    30.00
+    2026-03-01      $    30.00
+    2026-04-01      $    30.00
+
+─── sim_39  cus_USmabh1wBqVH8B ───
+  Events:
+    day   0: customer_created (standard, monthly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $    10.00
+    2025-12-01      $    10.00
+    2026-01-01      $    10.00
+    2026-02-01      $    10.00
+    2026-03-01      $    10.00
+    2026-04-01      $    10.00
+
+─── sim_40  cus_USmaIg3N1cg7T6 ───
+  Events:
+    day   0: customer_created (standard, monthly)
+    day  71: marked_past_due
+  MRR by month:
+    2025-11-01      $    10.00
+    2025-12-01      $    10.00
+    2026-01-01      $    10.00
+    2026-02-01      $     0.00
+    2026-03-01      $     0.00
+    2026-04-01      $     0.00
+
+─── sim_41  cus_USmaTm1eWHLvNZ ───
+  Events:
+    day   0: customer_created (standard, yearly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $     9.00
+    2025-12-01      $     9.00
+    2026-01-01      $     9.00
+    2026-02-01      $     9.00
+    2026-03-01      $     9.00
+    2026-04-01      $     9.00
+
+─── sim_42  cus_USmad03z4dSe7k ───
+  Events:
+    day   0: customer_created (standard, monthly)
+    day  45: canceled
+    day  89: recovered  (skipped: sub is canceled, nothing to recover)
+  MRR by month:
+    2025-11-01      $    10.00
+    2025-12-01      $    10.00
+    2026-01-01      $     0.00
+    2026-02-01      $     0.00
+    2026-03-01      $     0.00
+    2026-04-01      $     0.00
+
+─── sim_43  cus_USmamf0CxdTTCh ───
+  Events:
+    day   0: customer_created (enterprise, monthly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $    45.00
+    2025-12-01      $    45.00
+    2026-01-01      $    45.00
+    2026-02-01      $    45.00
+    2026-03-01      $    45.00
+    2026-04-01      $    45.00
+
+─── sim_44  cus_USmaXhF1wboENr ───
+  Events:
+    day   0: customer_created (standard, monthly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $    10.00
+    2025-12-01      $    10.00
+    2026-01-01      $    10.00
+    2026-02-01      $    10.00
+    2026-03-01      $    10.00
+    2026-04-01      $    10.00
+
+─── sim_45  cus_USma9lpxjUMZ8Z ───
+  Events:
+    day   0: customer_created (standard, monthly)
+    day 154: marked_past_due  (skipped: would advance to day 182 > 180 to fire renewal)
+  MRR by month:
+    2025-11-01      $    10.00
+    2025-12-01      $    10.00
+    2026-01-01      $    10.00
+    2026-02-01      $    10.00
+    2026-03-01      $    10.00
+    2026-04-01      $    10.00
+
+─── sim_46  cus_USmay4PFC6M59c ───
+  Events:
+    day   0: customer_created (pro_plus, monthly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $    15.00
+    2025-12-01      $    15.00
+    2026-01-01      $    15.00
+    2026-02-01      $    15.00
+    2026-03-01      $    15.00
+    2026-04-01      $    15.00
+
+─── sim_47  cus_USmaFrZ2R4KHuf ───
+  Events:
+    day   0: customer_created (standard, monthly)
+    day  75: marked_past_due
+  MRR by month:
+    2025-11-01      $    10.00
+    2025-12-01      $    10.00
+    2026-01-01      $    10.00
+    2026-02-01      $     0.00
+    2026-03-01      $     0.00
+    2026-04-01      $     0.00
+
+─── sim_48  cus_USma9Sr7wq6GXz ───
+  Events:
+    day   0: customer_created (enterprise, monthly)
+    day  11: tier_downgraded (enterprise → engage)
+  MRR by month:
+    2025-11-01      $    35.50
+    2025-12-01      $    30.00
+    2026-01-01      $    30.00
+    2026-02-01      $    30.00
+    2026-03-01      $    30.00
+    2026-04-01      $    30.00
+
+─── sim_49  cus_USmb4Z9CbhnhBC ───
+  Events:
+    day   0: customer_created (enterprise, yearly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $    40.50
+    2025-12-01      $    40.50
+    2026-01-01      $    40.50
+    2026-02-01      $    40.50
+    2026-03-01      $    40.50
+    2026-04-01      $    40.50
+
+─── sim_50  cus_USmbdgkc6slwgN ───
+  Events:
+    day   6: customer_created (standard, monthly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $    10.00
+    2025-12-01      $    10.00
+    2026-01-01      $    10.00
+    2026-02-01      $    10.00
+    2026-03-01      $    10.00
+    2026-04-01      $    10.00
+
+─── sim_51  cus_USmby2A7mGGUIN ───
+  Events:
+    day  14: customer_created (standard, monthly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $    10.00
+    2025-12-01      $    10.00
+    2026-01-01      $    10.00
+    2026-02-01      $    10.00
+    2026-03-01      $    10.00
+    2026-04-01      $    10.00
+
+─── sim_52  cus_USmco1PBvPQ31p ───
+  Events:
+    day  38: customer_created (engage, monthly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $     0.00
+    2025-12-01      $    30.00
+    2026-01-01      $    30.00
+    2026-02-01      $    30.00
+    2026-03-01      $    30.00
+    2026-04-01      $    30.00
+
+─── sim_53  cus_USmcT6eKLwoeNe ───
+  Events:
+    day  39: customer_created (standard, monthly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $     0.00
+    2025-12-01      $    10.00
+    2026-01-01      $    10.00
+    2026-02-01      $    10.00
+    2026-03-01      $    10.00
+    2026-04-01      $    10.00
+
+─── sim_54  cus_USmcYOJNADjK87 ───
+  Events:
+    day  44: customer_created (pro_plus, monthly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $     0.00
+    2025-12-01      $    15.00
+    2026-01-01      $    15.00
+    2026-02-01      $    15.00
+    2026-03-01      $    15.00
+    2026-04-01      $    15.00
+
+─── sim_55  cus_USmdcnloTfr7pT ───
+  Events:
+    day  51: customer_created (engage, monthly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $     0.00
+    2025-12-01      $    30.00
+    2026-01-01      $    30.00
+    2026-02-01      $    30.00
+    2026-03-01      $    30.00
+    2026-04-01      $    30.00
+
+─── sim_56  cus_USmdZOcL3I24CH ───
+  Events:
+    day  61: customer_created (standard, monthly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $     0.00
+    2025-12-01      $     0.00
+    2026-01-01      $    10.00
+    2026-02-01      $    10.00
+    2026-03-01      $    10.00
+    2026-04-01      $    10.00
+
+─── sim_57  cus_USmeRBYLB3yuPH ───
+  Events:
+    day  74: customer_created (pro_plus, monthly)
+    day 142: tier_upgraded (pro_plus → engage)
+  MRR by month:
+    2025-11-01      $     0.00
+    2025-12-01      $     0.00
+    2026-01-01      $    15.00
+    2026-02-01      $    15.00
+    2026-03-01      $    25.64
+    2026-04-01      $    30.00
+
+─── sim_58  cus_USmeMYw2OupkcJ ───
+  Events:
+    day  75: customer_created (standard, monthly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $     0.00
+    2025-12-01      $     0.00
+    2026-01-01      $    10.00
+    2026-02-01      $    10.00
+    2026-03-01      $    10.00
+    2026-04-01      $    10.00
+
+─── sim_59  cus_USmfSeOIfdC4Hj ───
+  Events:
+    day  76: customer_created (standard, monthly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $     0.00
+    2025-12-01      $     0.00
+    2026-01-01      $    10.00
+    2026-02-01      $    10.00
+    2026-03-01      $    10.00
+    2026-04-01      $    10.00
+
+─── sim_60  cus_USmgg2U2KBwxt6 ───
+  Events:
+    day  93: customer_created (enterprise, yearly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $     0.00
+    2025-12-01      $     0.00
+    2026-01-01      $     0.00
+    2026-02-01      $    40.50
+    2026-03-01      $    40.50
+    2026-04-01      $    40.50
+
+─── sim_61  cus_USmg3Zn1plHFso ───
+  Events:
+    day 104: customer_created (standard, yearly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $     0.00
+    2025-12-01      $     0.00
+    2026-01-01      $     0.00
+    2026-02-01      $     9.00
+    2026-03-01      $     9.00
+    2026-04-01      $     9.00
+
+─── sim_62  cus_USmg73HV50bMns ───
+  Events:
+    day 107: customer_created (enterprise, monthly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $     0.00
+    2025-12-01      $     0.00
+    2026-01-01      $     0.00
+    2026-02-01      $    45.00
+    2026-03-01      $    45.00
+    2026-04-01      $    45.00
+
+─── sim_63  cus_USmglVHGFVWikW ───
+  Events:
+    day 112: customer_created (standard, monthly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $     0.00
+    2025-12-01      $     0.00
+    2026-01-01      $     0.00
+    2026-02-01      $    10.00
+    2026-03-01      $    10.00
+    2026-04-01      $    10.00
+
+─── sim_64  cus_USmgA2RDLAIoTM ───
+  Events:
+    day 115: customer_created (standard, monthly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $     0.00
+    2025-12-01      $     0.00
+    2026-01-01      $     0.00
+    2026-02-01      $     0.00
+    2026-03-01      $    10.00
+    2026-04-01      $    10.00
+
+─── sim_65  cus_USmhlZtNgneqvZ ───
+  Events:
+    day 119: customer_created (pro_plus, monthly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $     0.00
+    2025-12-01      $     0.00
+    2026-01-01      $     0.00
+    2026-02-01      $     0.00
+    2026-03-01      $    15.00
+    2026-04-01      $    15.00
+
+─── sim_66  cus_USmiorfn49p1Cv ───
+  Events:
+    day 124: customer_created (standard, yearly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $     0.00
+    2025-12-01      $     0.00
+    2026-01-01      $     0.00
+    2026-02-01      $     0.00
+    2026-03-01      $     9.00
+    2026-04-01      $     9.00
+
+─── sim_67  cus_USmizoSng9nw04 ───
+  Events:
+    day 129: customer_created (standard, monthly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $     0.00
+    2025-12-01      $     0.00
+    2026-01-01      $     0.00
+    2026-02-01      $     0.00
+    2026-03-01      $    10.00
+    2026-04-01      $    10.00
+
+─── sim_68  cus_USmiJ0JSYMYa7x ───
+  Events:
+    day 130: customer_created (standard, monthly)
+    day 140: canceled
+    day 177: recovered  (skipped: sub is canceled, nothing to recover)
+  MRR by month:
+    2025-11-01      $     0.00
+    2025-12-01      $     0.00
+    2026-01-01      $     0.00
+    2026-02-01      $     0.00
+    2026-03-01      $    10.00
+    2026-04-01      $     0.00
+
+─── sim_69  cus_USmlpm7139Pda9 ───
+  Events:
+    day 141: customer_created (enterprise, yearly)
+    day 155: marked_past_due  (skipped: would advance to day 507 > 180 to fire renewal)
+  MRR by month:
+    2025-11-01      $     0.00
+    2025-12-01      $     0.00
+    2026-01-01      $     0.00
+    2026-02-01      $     0.00
+    2026-03-01      $    40.50
+    2026-04-01      $    40.50
+
+─── sim_70  cus_USmlcYZrWU0So2 ───
+  Events:
+    day 146: customer_created (pro_plus, monthly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $     0.00
+    2025-12-01      $     0.00
+    2026-01-01      $     0.00
+    2026-02-01      $     0.00
+    2026-03-01      $     0.00
+    2026-04-01      $    15.00
+
+─── sim_71  cus_USmmO2hRwXzCd5 ───
+  Events:
+    day 170: customer_created (pro_plus, monthly)
+    (no further events)
+  MRR by month:
+    2025-11-01      $     0.00
+    2025-12-01      $     0.00
+    2026-01-01      $     0.00
+    2026-02-01      $     0.00
+    2026-03-01      $     0.00
+    2026-04-01      $    15.00
 
 ======================================================================
 Failures: sanity check

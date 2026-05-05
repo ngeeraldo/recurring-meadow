@@ -16,7 +16,7 @@ Track subscription events, maintaining a running MRR tally. This is what product
 **Invoice line items (chosen)** 
 Every paid line item represents a specific dollar amount billed. Invoices are immutable and easily auditable. This was the right size for the project: simpler than event sourcing, more accurate than subscription state.
 
-## Filters and normalization
+## Filters and normalization 
 Two decisions narrow what counts as MRR:
 
 **Active-only.** 
@@ -26,12 +26,9 @@ Past_due subscriptions are excluded. Stripe's default analytics include them, bu
 An annual subscription priced at $324/year contributes $27/month to MRR for each of the 12 months its billing period covers. This follows standard B2B SaaS convention (Stripe Billing, ChartMogul, etc. blend this way) and aligns with the spec's "normalized monthly value" language.
 
 ## Comparison to Stripe's analytics
-Stripe's Billing dashboard doesn't display test-clock data, so a direct comparison to their MRR view isn't possible for this dataset. Stripe support confirmed: *"The Billing overview dashboard and its analytics don't include data from test clock subscriptions."* Their recommended workaround: *"Use the API to query your test clock subscriptions directly... and calculate metrics programmatically."*
+Stripe's dashboard MRR view shows ~$2,800/month — roughly 3x my calculated MRR. The cause is data pollution from prior seeder runs: Stripe's dashboard reports 167 active subscribers, but my current seed contains only ~70 customers. Stripe's "delete all test data" function does not reliably remove all data, so I can not clearly compare the two MRRs. 
 
-That's exactly what this pipeline does — extract via the Stripe API into 
-BigQuery, compute MRR via SQL, validate with an independent Python implementation. 
-In production with real-time billing data, the dashboard would work and could 
-serve as an additional reference.
+Subscriber count alone (~2.4x) accounts for most of the 3x MRR difference. Methodology differences likely contribute too — Stripe appears to compute from subscription state and includes past_due subscriptions; I use invoice line items and exclude past_due. Without scoping Stripe's view to my current customer set, I can't quantify which portion of the gap is which.
 
 ## Validation approach
 I took two approaches to validation
@@ -42,15 +39,17 @@ Using the configuration values from the seeder, we calculate an expected subscri
 **Per-Customer Reconstruction**
 Collects every customers paid invoices directly from Stripe using Python with the same period-spreading methodology as the SQL. Compares to the BigQuery output within $0.01. Agreement validates the ETL and SQL pipeline. 
 
-**What this Doesn't Validate**
-The methodology itself, both implementations use the same period-spreading logic. They could both be correct or wrong. Closing this gap would require verifying specific customers across plan tiers. A quick look over was completed, but a rigourous programmatic solution was not implemented withing the 2-day window.
+**Stage 3 — Per-Customer Spot Check.** 
+Produces an audit-trail format: for each of ~70 seeded customers, the customer's event log (from `seeder_events.txt`) is printed alongside their per-month MRR contribution. This makes it possible to verify specific customer scenarios — vanilla monthly subs, mid-period tier changes (with proration), cancellations, past_due transitions — produce the expected MRR shapes. After this re-run, all 70 customers' MRR contributions match expectations given their event histories.
+
+The full audit is committed as `output/validation_output.txt`.
+
+**Limitations of this validation.** 
+Stage 3 verification is human-in-the-loop — the tool surfaces customer-level data, but a person reads it. For long-running production data with thousands of customers, this approach doesn't scale. Production validation would encode invariant checks as automated assertions.
 
 ## Known limitations
 **Quantity=1 per customer.** 
 All seed customers have a single screen, producing 5-10x smaller MRR magnitudes. The methodology correctly multiplies `unit_amount × quantity`; the seed just doesn't support it. However, the seed does support subscription changes (tier upgrades / downgrades), so we have confidence that the MRR correctly handles subscription modifications.
-
-**Tier Changes Producds No Proration Charges**
-Mid-period tier changes use Stripe's proration_behavior='none' — the new price takes effect at the next renewal rather than generating a proration invoice. This is a real Stripe configuration option used by many B2B SaaS companies; it produces cleaner seed data and simpler MRR math while remaining realistic.
 
 ## Architecture for production sync
 Webhook-driven incremental sync (subscribe to invoice.paid, 

@@ -88,6 +88,5 @@ def test_change_tier_modifies_existing_item_with_no_proration():
     modify.assert_called_once_with(
         "sub_abc",
         items=[{"id": "si_existing", "price": "price_new"}],
-        proration_behavior="none",
     )
     assert result is modified
