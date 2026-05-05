@@ -61,3 +61,6 @@ Three tables get written:
 ```bash
 pytest
 ```
+
+Validation: 
+pytest -s tests/test_expected_metrics.py

@@ -51,12 +51,21 @@ def _ts(epoch: Optional[int]) -> Optional[str]:
 
 
 def _serialize_for_json(value: Any) -> str:
-    """Serialize a Stripe SDK object (or list) to a JSON string.
+    """Serialize a Stripe SDK object (or list of them) to a JSON string.
 
-    Stripe SDK objects subclass ``dict``, so ``json.dumps`` walks them
-    natively. ``default=str`` is a backstop for any unexpected types.
+    Stripe v15.x ``StripeObject`` does NOT subclass dict, so ``json.dumps``
+    can't walk it natively — it falls back to ``default=str``, which calls
+    the SDK's pretty-printed JSON repr and then escapes the whole thing
+    as a string. The result is double-encoded garbage.
+
+    Use the SDK's public ``to_dict()`` to get a recursive plain-dict
+    representation first, then ``json.dumps`` produces clean output.
     """
-    return json.dumps(value, default=str)
+    if isinstance(value, list):
+        plain = [v.to_dict() if hasattr(v, "to_dict") else v for v in value]
+    else:
+        plain = value.to_dict() if hasattr(value, "to_dict") else value
+    return json.dumps(plain, default=str)
 
 
 def _all_customers() -> Iterator[stripe.Customer]:

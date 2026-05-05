@@ -68,15 +68,9 @@ Flat **3.5 new customers per month** on average, regardless of current base size
 - Modeled as `dA/dt = New − k·A` with `New = 3.5`, `k = 0.04`, `A(0) = 50`: long-run steady state `A_ss = 87.5`, so `A(12) ≈ 87.5 + (50 − 87.5) · e⁻⁰·⁴⁸ ≈ 65` → **~30% YoY**. ✓
 - Over the 6-month simulation window: `A(6) ≈ 87.5 + (50 − 87.5) · e⁻⁰·²⁴ ≈ 58`, i.e. ending around 58 active customers.
 
-### Initial state distribution (open question)
+### Initial state distribution
 
-Starting 50 customers — proposed split (to be confirmed):
-
-| State     | Count |
-| --------- | ----- |
-| Active    | 40    |
-| Past Due  | 5     |
-| Canceled  | 5     |
+All 50 starting customers begin **active**. Past-due and canceled state diversity emerges naturally from the daily transition rolls over the 180-day window — pre-seeding non-active customers would have required additional setup steps (drive a customer through past_due, then cancel) that didn't add enough simulation value to justify the complexity.
 
 ## Technical Strategy
 
