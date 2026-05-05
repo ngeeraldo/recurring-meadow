@@ -27,7 +27,7 @@ import stripe
 from dotenv import load_dotenv
 from google.cloud import bigquery
 
-from scripts import stripe_client
+from scripts.seeder import stripe_client
 
 # Load .env so BIGQUERY_PROJECT / BIGQUERY_DB can live alongside STRIPE_API_KEY.
 # override=True so .env wins over a stale value lingering in the shell env

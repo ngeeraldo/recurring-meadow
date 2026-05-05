@@ -1,20 +1,10 @@
-"""Pure-Python stochastic simulator for the seeder.
-
-Walks ``SIMULATION_DAYS`` days. On each day, every existing customer rolls
-dice for state transitions, and a small number of Bernoulli trials decide
-whether a new customer is acquired. The output is a chronological event log
-that the seeder replays against Stripe.
-
-No Stripe SDK calls — this is fully unit-testable and deterministic when
-called with a fixed seed.
-"""
 from __future__ import annotations
 
 import random
 from dataclasses import dataclass, field
 from typing import Any, Optional
 
-from scripts import config
+from . import config
 
 
 @dataclass
@@ -127,11 +117,6 @@ def _roll_canceled(cust: SimCustomer, rng: random.Random, day: int, events: list
 
 
 def simulate(seed: Optional[int] = None) -> tuple:
-    """Run the full simulation. Returns (roster, events) in chronological order.
-
-    ``roster`` includes all customers ever created (initial + acquired).
-    ``events`` is sorted by day (initial creates at day 0 come first).
-    """
     rng_seed = seed if seed is not None else config.RNG_SEED
     rng = random.Random(rng_seed)
 

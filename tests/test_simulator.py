@@ -1,4 +1,4 @@
-from scripts import config, simulator
+from scripts.seeder import config, simulator
 
 
 def test_simulate_is_deterministic_with_seed():

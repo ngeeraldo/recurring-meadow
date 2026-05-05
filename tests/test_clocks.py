@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock, patch
 
-from scripts import clocks
+from scripts.seeder import clocks
 
 
 def test_create_clock_passes_frozen_time():
@@ -19,7 +19,7 @@ def test_advance_clock_polls_until_ready():
 
     with patch("stripe.test_helpers.TestClock.advance", return_value=advance_response) as advance, \
          patch("stripe.test_helpers.TestClock.retrieve", side_effect=[advancing, advancing, ready]) as retrieve, \
-         patch("scripts.clocks.time.sleep") as sleep:
+         patch("scripts.seeder.clocks.time.sleep") as sleep:
         result = clocks.advance_clock("clock_abc", frozen_time=1_700_000_000 + 86_400)
 
     advance.assert_called_once_with("clock_abc", frozen_time=1_700_000_000 + 86_400)

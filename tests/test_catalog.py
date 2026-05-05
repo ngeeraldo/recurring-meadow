@@ -2,7 +2,7 @@ from unittest.mock import MagicMock, patch
 
 import stripe
 
-from scripts import catalog
+from scripts.seeder import catalog
 
 
 def test_get_or_create_product_returns_existing():
@@ -35,7 +35,7 @@ def test_get_or_create_price_returns_existing():
     listing = MagicMock(data=[existing])
     with patch("stripe.Price.list", return_value=listing) as list_call, \
          patch("stripe.Price.create") as create, \
-         patch("scripts.catalog.get_or_create_product"):
+         patch("scripts.seeder.catalog.get_or_create_product"):
         result = catalog.get_or_create_price("standard", "month")
 
     list_call.assert_called_once_with(lookup_keys=["standard_monthly"], limit=1)
@@ -49,7 +49,7 @@ def test_get_or_create_price_creates_monthly_when_missing():
     created = MagicMock(id="price_new")
     with patch("stripe.Price.list", return_value=listing), \
          patch("stripe.Price.create", return_value=created) as create, \
-         patch("scripts.catalog.get_or_create_product", return_value=product):
+         patch("scripts.seeder.catalog.get_or_create_product", return_value=product):
         result = catalog.get_or_create_price("standard", "month")
 
     create.assert_called_once_with(
@@ -67,7 +67,7 @@ def test_get_or_create_price_creates_annual_with_yearly_total():
     product = MagicMock(id="plan_standard")
     with patch("stripe.Price.list", return_value=listing), \
          patch("stripe.Price.create") as create, \
-         patch("scripts.catalog.get_or_create_product", return_value=product):
+         patch("scripts.seeder.catalog.get_or_create_product", return_value=product):
         catalog.get_or_create_price("standard", "year")
 
     kwargs = create.call_args.kwargs

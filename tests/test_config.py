@@ -1,6 +1,6 @@
 import math
 
-from scripts import config
+from scripts.seeder import config
 
 
 def test_outgoing_probabilities_per_from_state_sum_at_most_one():

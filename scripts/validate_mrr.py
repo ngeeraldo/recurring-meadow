@@ -12,7 +12,7 @@ compare to the BigQuery total within **$0.01**. Same source data, same
 methodology, fundamentally different code structure — agreement validates
 the SQL aggregation's internal consistency.
 
-Outputs to stdout and ``validation_output.txt`` at the project root.
+Outputs to stdout and ``output/validation_output.txt``.
 
 Auth (read from ``.env``, mirrors ``scripts/etl.py``):
 - ``STRIPE_API_KEY``
@@ -35,7 +35,8 @@ import stripe
 from dotenv import load_dotenv
 from google.cloud import bigquery
 
-from scripts import catalog, config, etl
+from scripts import etl
+from scripts.seeder import catalog, config
 
 load_dotenv(override=True)
 
@@ -45,7 +46,7 @@ STRIPE_API_KEY = os.environ.get("STRIPE_API_KEY", "")
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SQL_FILE = REPO_ROOT / "sql" / "mrr_monthly.sql"
-OUTPUT_FILE = REPO_ROOT / "validation_output.txt"
+OUTPUT_FILE = REPO_ROOT / "output" / "validation_output.txt"
 
 # Validation window: Nov 2025 .. Apr 2026 inclusive.
 WINDOW_START = date(2025, 11, 1)

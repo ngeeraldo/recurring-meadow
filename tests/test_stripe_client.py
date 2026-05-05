@@ -1,7 +1,7 @@
 import pytest
 import stripe
 
-from scripts import stripe_client
+from scripts.seeder import stripe_client
 
 
 def test_init_sets_api_key_from_env(monkeypatch):
@@ -24,7 +24,7 @@ def test_init_configures_network_retries(monkeypatch):
 
 def test_init_raises_when_api_key_missing(monkeypatch):
     monkeypatch.delenv("STRIPE_API_KEY", raising=False)
-    monkeypatch.setattr("scripts.stripe_client.load_dotenv", lambda: None)
+    monkeypatch.setattr("scripts.seeder.stripe_client.load_dotenv", lambda: None)
 
     with pytest.raises(RuntimeError, match="STRIPE_API_KEY"):
         stripe_client.init()

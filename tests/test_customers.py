@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock, patch
 
-from scripts import customers
+from scripts.seeder import customers
 
 
 def test_create_customer_attaches_test_clock():
