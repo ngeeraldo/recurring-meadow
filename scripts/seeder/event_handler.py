@@ -150,7 +150,16 @@ def handle_event(
         # cancels the sub before the simulator gets a chance to recover it.
         advance_clock_to(state, event.day, base_frozen_time)
         sub = stripe.Subscription.retrieve(state.sub_id)
-        renewal_day = (sub.current_period_end - base_frozen_time) // 86_400
+        # Stripe v15 moved current_period_end from Subscription to
+        # SubscriptionItem. Fall back to the first item if the sub-level
+        # field is absent.
+        period_end = getattr(sub, "current_period_end", None)
+        if period_end is None:
+            items = list(sub["items"].data)
+            period_end = getattr(items[0], "current_period_end", None) if items else None
+        if period_end is None:
+            return _skip("could not resolve current_period_end on sub or item")
+        renewal_day = (period_end - base_frozen_time) // 86_400
         target_day = renewal_day + 1
         if target_day > config.SIMULATION_DAYS:
             return _skip(

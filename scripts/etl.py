@@ -1,12 +1,13 @@
 """ETL: Stripe → BigQuery.
 
-Extracts customers, subscriptions, and invoice line items from Stripe and
-loads them into the BigQuery `stripe_raw` dataset (drop-and-recreate per
-run). Step 3 of the project consumes this dataset to compute MRR via SQL.
+Extracts paid invoice line items from Stripe and loads them into the
+``invoice_line_items`` table in the BigQuery ``stripe_raw`` dataset
+(drop-and-recreate per run). Step 3 (``sql/mrr_monthly.sql``) and the
+dashboard API both read from this single table.
 
-Schema favors simplicity over normalization per the take-home spec —
-denormalized columns repeat customer_id on every line item, and nested
-subscription items live in a single JSON column rather than a child table.
+The line-item rows are deliberately denormalized — ``customer_id``,
+``subscription_id``, ``quantity``, ``unit_amount``, and ``interval`` are all
+on every row so ad-hoc queries don't need joins.
 
 Auth + config (all read from .env):
 - ``STRIPE_API_KEY`` — Stripe secret key.
@@ -17,11 +18,10 @@ Auth + config (all read from .env):
 """
 from __future__ import annotations
 
-import json
 import os
 import sys
 from datetime import datetime, timezone
-from typing import Any, Iterator, Optional
+from typing import Iterator, Optional
 
 import stripe
 from dotenv import load_dotenv
@@ -50,24 +50,6 @@ def _ts(epoch: Optional[int]) -> Optional[str]:
     return datetime.fromtimestamp(epoch, tz=timezone.utc).isoformat()
 
 
-def _serialize_for_json(value: Any) -> str:
-    """Serialize a Stripe SDK object (or list of them) to a JSON string.
-
-    Stripe v15.x ``StripeObject`` does NOT subclass dict, so ``json.dumps``
-    can't walk it natively — it falls back to ``default=str``, which calls
-    the SDK's pretty-printed JSON repr and then escapes the whole thing
-    as a string. The result is double-encoded garbage.
-
-    Use the SDK's public ``to_dict()`` to get a recursive plain-dict
-    representation first, then ``json.dumps`` produces clean output.
-    """
-    if isinstance(value, list):
-        plain = [v.to_dict() if hasattr(v, "to_dict") else v for v in value]
-    else:
-        plain = value.to_dict() if hasattr(value, "to_dict") else value
-    return json.dumps(plain, default=str)
-
-
 def _all_customers() -> Iterator[stripe.Customer]:
     """Yield every customer, including those attached to test clocks.
 
@@ -89,71 +71,6 @@ def _all_customers() -> Iterator[stripe.Customer]:
 # ---------------------------------------------------------------------------
 # Extract
 # ---------------------------------------------------------------------------
-
-def extract_customers() -> list:
-    print("Extracting customers from Stripe...")
-    rows = []
-    for cus in _all_customers():
-        rows.append({
-            "id": cus.id,
-            "email": cus.email,
-            "created": _ts(cus.created),
-        })
-    print(f"  Loaded {len(rows)} customers")
-    return rows
-
-
-def _resolve_current_period(sub, items) -> tuple:
-    """Return (current_period_start, current_period_end) Unix epochs.
-
-    Newer Stripe API versions moved these fields from the Subscription
-    object to the SubscriptionItem level, so we fall back to the first
-    item when the sub-level field is missing.
-    NB: stripe-python 15.x StripeObject is NOT a dict subclass — we use
-    ``getattr(obj, key, default)`` because ``obj.get(...)`` raises
-    AttributeError.
-    """
-    start = getattr(sub, "current_period_start", None)
-    end = getattr(sub, "current_period_end", None)
-    if start is None and items:
-        start = getattr(items[0], "current_period_start", None)
-    if end is None and items:
-        end = getattr(items[0], "current_period_end", None)
-    return start, end
-
-
-def _subscription_to_row(sub) -> dict:
-    """Flatten a Stripe Subscription into a BigQuery row dict."""
-    items = list(sub["items"].data)
-    period_start, period_end = _resolve_current_period(sub, items)
-    return {
-        "id": sub.id,
-        "customer_id": sub.customer,
-        "status": sub.status,
-        "start_date": _ts(getattr(sub, "start_date", None)),
-        "current_period_start": _ts(period_start),
-        "current_period_end": _ts(period_end),
-        "canceled_at": _ts(getattr(sub, "canceled_at", None)),
-        "items": _serialize_for_json(items),
-    }
-
-
-def extract_subscriptions() -> list:
-    # Same test-clock gotcha as customers: Subscription.list with no filter
-    # silently omits subs whose customer is attached to a test clock. Iterate
-    # per customer to pull everything.
-    print("Extracting subscriptions from Stripe...")
-    rows = []
-    for cus in _all_customers():
-        for sub in stripe.Subscription.list(
-            customer=cus.id,
-            status="all",
-            expand=["data.items.data.price"],
-        ).auto_paging_iter():
-            rows.append(_subscription_to_row(sub))
-    print(f"  Loaded {len(rows)} subscriptions")
-    return rows
-
 
 def _build_price_interval_map() -> dict:
     """Map ``price_id → recurring.interval`` (e.g. ``"month"``, ``"year"``).
@@ -259,23 +176,6 @@ def extract_invoice_line_items() -> list:
 # Load
 # ---------------------------------------------------------------------------
 
-CUSTOMERS_SCHEMA = [
-    bigquery.SchemaField("id", "STRING"),
-    bigquery.SchemaField("email", "STRING"),
-    bigquery.SchemaField("created", "TIMESTAMP"),
-]
-
-SUBSCRIPTIONS_SCHEMA = [
-    bigquery.SchemaField("id", "STRING"),
-    bigquery.SchemaField("customer_id", "STRING"),
-    bigquery.SchemaField("status", "STRING"),
-    bigquery.SchemaField("start_date", "TIMESTAMP"),
-    bigquery.SchemaField("current_period_start", "TIMESTAMP"),
-    bigquery.SchemaField("current_period_end", "TIMESTAMP"),
-    bigquery.SchemaField("canceled_at", "TIMESTAMP"),
-    bigquery.SchemaField("items", "JSON"),
-]
-
 INVOICE_LINE_ITEMS_SCHEMA = [
     bigquery.SchemaField("line_item_id", "STRING"),
     bigquery.SchemaField("invoice_id", "STRING"),
@@ -336,18 +236,14 @@ def run() -> None:
     bq = bigquery.Client(project=PROJECT_ID)
     _ensure_dataset(bq)
 
-    customers = extract_customers()
-    subscriptions = extract_subscriptions()
     line_items = extract_invoice_line_items()
 
     print()
     print(f"Loading into {PROJECT_ID}.{DATASET_ID}...")
-    _load(bq, "customers", customers, CUSTOMERS_SCHEMA)
-    _load(bq, "subscriptions", subscriptions, SUBSCRIPTIONS_SCHEMA)
     _load(bq, "invoice_line_items", line_items, INVOICE_LINE_ITEMS_SCHEMA)
 
     print()
-    print(f"ETL complete. Tables ready in {PROJECT_ID}.{DATASET_ID}.")
+    print(f"ETL complete. invoice_line_items ready in {PROJECT_ID}.{DATASET_ID}.")
 
 
 if __name__ == "__main__":
