@@ -1,0 +1,50 @@
+:root {
+  /* Dark theme palette */
+  --bg-page: #0f1419;
+  --bg-card: #1f2937;
+  --text: #e5e7eb;
+  --text-muted: #9ca3af;
+  --border: #374151;
+  --accent: #10b981;
+
+  font-family:
+    "Inter",
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--bg-page);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg-page);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-weight: 600;
+  color: var(--text);
+}

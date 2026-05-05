@@ -1,0 +1,158 @@
+.app {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 48px 32px 96px;
+}
+
+.header {
+  margin-bottom: 32px;
+}
+
+.header h1 {
+  font-size: 32px;
+  letter-spacing: -0.5px;
+  margin-bottom: 6px;
+}
+
+.header .subtitle {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.section {
+  margin-bottom: 24px;
+}
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.current-mrr-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.current-mrr-value {
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: -1.2px;
+  line-height: 1.1;
+  margin-bottom: 6px;
+}
+
+.current-mrr-asof {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.chart-card {
+  padding: 24px 16px 16px 8px;
+}
+
+.chart-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin: 0 16px 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.recharts-tooltip-wrapper {
+  outline: none;
+}
+
+.tooltip {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+.tooltip-month {
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.tooltip-value {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.table-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.table-card table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.table-card th,
+.table-card td {
+  padding: 14px 16px;
+  text-align: right;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.table-card th:first-child,
+.table-card td:first-child {
+  text-align: left;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.table-card th {
+  background: rgba(0, 0, 0, 0.15);
+  font-weight: 500;
+  color: var(--text-muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.table-card tr:last-child td {
+  border-bottom: none;
+}
+
+.table-card td.current-cell {
+  color: var(--text-muted);
+}
+
+.table-footnote {
+  padding: 12px 16px;
+  font-size: 12px;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border);
+}
+
+.status {
+  text-align: center;
+  padding: 80px 0;
+  color: var(--text-muted);
+  font-size: 16px;
+}
+
+.status.error {
+  color: #ef4444;
+}
+
+.status .error-detail {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--text-muted);
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}

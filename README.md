@@ -64,3 +64,7 @@ pytest
 
 Validation: 
 pytest -s tests/test_expected_metrics.py
+
+Start API
+.venv/bin/pip install -r api/requirements.txt   # one-time     
+.venv/bin/uvicorn api.main:app --reload --port 8000
