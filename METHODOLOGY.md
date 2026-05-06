@@ -31,7 +31,7 @@ Stripe's dashboard MRR view shows ~$2,800/month — roughly 3x my calculated MRR
 Subscriber count alone (~2.4x) accounts for most of the 3x MRR difference. Methodology differences likely contribute too — Stripe appears to compute from subscription state and includes past_due subscriptions; I use invoice line items and exclude past_due. Without scoping Stripe's view to my current customer set, I can't quantify which portion of the gap is which.
 
 ## Validation approach
-I took two approaches to validation
+I took three approaches to validation
 
 - **Sanity Check Validation** 
 Using the configuration values from the seeder, we calculate an expected subscription cost and subscriber numbers per month. Then we expect the estimated month revenue to be within 20% of the actual ones. This is a magnitude check, not a precision check, and was used early in the process to catch any catastropic regressions.
