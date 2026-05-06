@@ -41,7 +41,6 @@ from scripts.seeder import catalog, config
 load_dotenv(override=True)
 
 PROJECT_ID = os.environ.get("BIGQUERY_PROJECT", "")
-DATASET_ID = os.environ.get("BIGQUERY_DB", "stripe_raw")
 STRIPE_API_KEY = os.environ.get("STRIPE_API_KEY", "")
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -229,41 +228,29 @@ def _query_bq_totals(client: bigquery.Client) -> tuple:
     return historical, current
 
 
-_PER_CUSTOMER_SQL = f"""
-WITH
-  month_series AS (
-    SELECT m AS month
-    FROM UNNEST(GENERATE_DATE_ARRAY(
-      DATE '{WINDOW_START.isoformat()}', DATE '{WINDOW_END.isoformat()}', INTERVAL 1 MONTH
-    )) AS m
-  ),
-  line_items AS (
-    SELECT
-      customer_id,
-      CAST(amount AS NUMERIC) / 100
-        / GREATEST(DATE_DIFF(DATE(period_end), DATE(period_start), MONTH), 1)
-        AS monthly_contribution,
-      DATE_TRUNC(DATE(period_start), MONTH) AS first_covered_month,
-      GREATEST(DATE_DIFF(DATE(period_end), DATE(period_start), MONTH), 1) AS months_covered
-    FROM `{{dataset}}.invoice_line_items`
-    WHERE invoice_status = 'paid' AND currency = 'usd'
-  )
-SELECT
-  ms.month,
-  li.customer_id,
-  ROUND(SUM(li.monthly_contribution), 2) AS bq_amount
-FROM month_series AS ms
-LEFT JOIN line_items AS li
-  ON ms.month >= li.first_covered_month
- AND ms.month <  DATE_ADD(li.first_covered_month, INTERVAL li.months_covered MONTH)
-WHERE li.customer_id IS NOT NULL
-GROUP BY ms.month, li.customer_id
-"""
+def _shared_ctes() -> str:
+    """Return mrr_monthly.sql's WITH block, minus the final rollup SELECT.
+
+    Lets per-customer breakdown queries reuse the production CTEs verbatim
+    (including ``per_customer_monthly`` / ``per_customer_current``) instead
+    of carrying a parallel copy of the period-spread arithmetic.
+    """
+    raw = SQL_FILE.read_text()
+    head, sep, _ = raw.partition("-- ROLLUP --")
+    if not sep:
+        raise RuntimeError(
+            "sql/mrr_monthly.sql is missing the '-- ROLLUP --' marker; "
+            "validate_mrr.py relies on it to reuse the production CTEs."
+        )
+    return head
 
 
 def _query_bq_per_customer(client: bigquery.Client) -> dict:
     """{customer_id: {month: Decimal bq_amount}} — used only when validation fails."""
-    sql = _PER_CUSTOMER_SQL.format(dataset=DATASET_ID)
+    sql = _shared_ctes() + (
+        "SELECT month, customer_id, ROUND(mrr_amount, 2) AS bq_amount "
+        "FROM per_customer_monthly"
+    )
     rows = list(client.query(sql).result())
     out: dict = {}
     for row in rows:
@@ -271,28 +258,12 @@ def _query_bq_per_customer(client: bigquery.Client) -> dict:
     return out
 
 
-_PER_CUSTOMER_CURRENT_SQL = """
-SELECT
-  customer_id,
-  ROUND(SUM(amount / 100.0
-    / GREATEST(DATE_DIFF(DATE(period_end), DATE(period_start), MONTH), 1)
-  ), 2) AS bq_amount
-FROM `{dataset}.invoice_line_items`
-WHERE invoice_status = 'paid'
-  AND currency = 'usd'
-  AND period_start <= CURRENT_TIMESTAMP()
-  AND period_end > CURRENT_TIMESTAMP()
-GROUP BY customer_id
-"""
-
-
 def _query_bq_per_customer_current(client: bigquery.Client) -> dict:
-    """{customer_id: Decimal current_mrr} — used only when the current row fails.
-
-    Mirrors the ``current_mrr`` CTE in sql/mrr_monthly.sql but with
-    ``customer_id`` in the GROUP BY for a per-customer breakdown.
-    """
-    sql = _PER_CUSTOMER_CURRENT_SQL.format(dataset=DATASET_ID)
+    """{customer_id: Decimal current_mrr} — used only when the current row fails."""
+    sql = _shared_ctes() + (
+        "SELECT customer_id, ROUND(mrr_amount, 2) AS bq_amount "
+        "FROM per_customer_current"
+    )
     rows = list(client.query(sql).result())
     return {row.customer_id: Decimal(str(row.bq_amount)) for row in rows}
 

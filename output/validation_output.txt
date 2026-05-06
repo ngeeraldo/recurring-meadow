@@ -1,5 +1,5 @@
 MRR Validation — multi-stage cross-check of sql/mrr_monthly.sql
-Generated: 2026-05-05T23:14:11.543857+00:00
+Generated: 2026-05-06T00:04:24.001475+00:00
 
 Querying BigQuery sql/mrr_monthly.sql...
   got 6 historical months + 1 current (2026-05-01) from BigQuery
